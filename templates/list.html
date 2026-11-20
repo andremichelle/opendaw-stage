@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- include:head -->
+    <title>{{siteTitle}}</title>
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{siteTitle}}">
+    <meta property="og:url" content="{{baseUrl}}">
+    <meta property="og:site_name" content="{{siteTitle}}">
+</head>
+<body class="page-list">
+<!-- include:header -->
+<main class="content">
+    <!-- if:empty --><p class="empty">No tracks yet.</p><!-- end:empty -->
+    <ol class="track-list">
+        <!-- each:tracks -->
+        <li class="track-row" data-player data-src="{{mixdown}}" data-peaks="{{peaks}}" data-duration="{{seconds}}">
+            <a class="cover" href="{{url}}"><img src="{{cover}}" alt="Cover of {{title}}" loading="lazy" width="160" height="160"></a>
+            <div class="heading">
+                <button class="play" type="button" data-play aria-label="Play {{title}}"><!-- include:icons --></button>
+                <div class="names">
+                    <a class="title" href="{{url}}">{{title}}</a>
+                    <span class="artist">{{artist}}</span>
+                </div>
+                <time class="date">{{date}}</time>
+            </div>
+            <div class="waveform" data-waveform data-unsupported-text="Your browser cannot play this track, please update it."><canvas></canvas></div>
+            <div class="meta">
+                <span class="time"><span data-position>0:00</span> / {{duration}}</span>
+                <!-- if:hasTags --><span class="tags"><!-- each:tags --><span class="tag">{{tag}}</span><!-- end:tags --></span><!-- end:hasTags -->
+                <span class="spacer"></span>
+                <!-- if:google -->
+                <button class="like<!-- if:liked --> active<!-- end:liked -->" type="button" data-like="{{uuid}}" data-login="{{loginUrl}}" aria-label="Like">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></svg>
+                    <span data-like-count>{{likes}}</span>
+                </button>
+                <a class="comment-count" href="{{url}}#comments" aria-label="Comments">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>
+                    <span>{{commentCount}}</span>
+                </a>
+                <!-- end:google -->
+            </div>
+        </li>
+        <!-- end:tracks -->
+    </ol>
+</main>
+<!-- include:footer -->
+</body>
+</html>

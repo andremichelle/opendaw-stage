@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- include:head -->
+    <title>{{heading}} · {{siteTitle}}</title>
+    <meta name="robots" content="noindex">
+</head>
+<body class="page-message">
+<!-- include:header -->
+<main class="content message">
+    <h1>{{heading}}</h1>
+    <p>{{message}}</p>
+    <!-- if:unfollowKey -->
+    <form method="post" action="api.php?action=unfollow">
+        <input type="hidden" name="key" value="{{unfollowKey}}">
+        <button class="button primary" type="submit">Unfollow</button>
+    </form>
+    <!-- end:unfollowKey -->
+    <p><a href="./">Back to all tracks</a></p>
+</main>
+<!-- include:footer -->
+</body>
+</html>

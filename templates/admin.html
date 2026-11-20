@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- include:head -->
+    <title>Admin · {{siteTitle}}</title>
+    <meta name="robots" content="noindex">
+</head>
+<body class="page-admin">
+<!-- include:header -->
+<main class="content admin">
+    <div class="admin-bar">
+        <h1>Admin</h1>
+        <nav class="admin-nav">
+            <a href="#tracks">Tracks</a>
+            <a href="#comments">Comments<!-- if:pendingCount --> <span class="badge">{{pendingCount}}</span><!-- end:pendingCount --></a>
+            <a href="#users">Users</a>
+            <a href="#followers">Followers <span class="count">{{followerCount}}</span></a>
+            <a href="#settings">Settings</a>
+        </nav>
+        <form method="post" action="admin.php">
+            <input type="hidden" name="csrf" value="{{csrf}}">
+            <input type="hidden" name="do" value="logout">
+            <button class="button quiet" type="submit">Log out</button>
+        </form>
+    </div>
+
+    <section id="tracks" class="panel">
+        <h2>Tracks</h2>
+        <!-- if:devCount -->
+        <div class="studio-target">
+            <span>{{devCount}} tracks open <code>{{devUrl}}</code> with Open in openDAW, because they were published from there.</span>
+            <form method="post" action="admin.php">
+                <input type="hidden" name="csrf" value="{{csrf}}">
+                <button class="button primary" name="do" value="studio-prod" data-confirm="These tracks will open https://opendaw.studio instead of {{devUrl}}. Tracks published from {{devUrl}} may use features that https://opendaw.studio does not have yet. Their projects then cannot be opened any more, until you publish them again from https://opendaw.studio. Switch now?">Open in PROD now</button>
+            </form>
+        </div>
+        <!-- end:devCount -->
+        <!-- if:!hasTracks --><p class="empty">No tracks yet. Publish one from openDAW.</p><!-- end:!hasTracks -->
+        <ul class="admin-list">
+            <!-- each:tracks -->
+            <li class="<!-- if:hidden -->is-hidden<!-- end:hidden -->">
+                <img class="thumb" src="{{cover}}" alt="" loading="lazy" width="48" height="48">
+                <div class="grow">
+                    <a href="{{url}}">{{title}}</a>
+                    <span class="sub">{{artist}} · {{date}} · {{likes}} likes · {{commentCount}} comments<!-- if:hasProject --> · opens {{studio}}<!-- end:hasProject --><!-- if:hidden --> · hidden<!-- end:hidden --></span>
+                </div>
+                <form method="post" action="admin.php">
+                    <input type="hidden" name="csrf" value="{{csrf}}">
+                    <input type="hidden" name="track" value="{{uuid}}">
+                    <!-- if:hidden --><button class="button" name="do" value="show">Show</button><!-- end:hidden -->
+                    <!-- if:!hidden --><button class="button" name="do" value="hide">Hide</button><!-- end:!hidden -->
+                    <button class="button danger" name="do" value="delete-track" data-confirm="Delete {{title}} with its likes and comments? This cannot be undone.">Delete</button>
+                </form>
+            </li>
+            <!-- end:tracks -->
+        </ul>
+    </section>
+
+    <section id="comments" class="panel">
+        <h2>Waiting for approval</h2>
+        <!-- if:!hasPending --><p class="empty">Nothing to approve.</p><!-- end:!hasPending -->
+        <ul class="admin-list">
+            <!-- each:pending -->
+            <li>
+                <div class="grow">
+                    <span class="sub">{{author}} on <a href="{{trackUrl}}">{{trackTitle}}</a> · {{time}}</span>
+                    <p class="text">{{{textHtml}}}</p>
+                </div>
+                <form method="post" action="admin.php">
+                    <input type="hidden" name="csrf" value="{{csrf}}">
+                    <input type="hidden" name="track" value="{{trackUuid}}">
+                    <input type="hidden" name="id" value="{{commentId}}">
+                    <button class="button primary" name="do" value="approve">Approve</button>
+                    <button class="button danger" name="do" value="delete-comment">Delete</button>
+                </form>
+            </li>
+            <!-- end:pending -->
+        </ul>
+        <h2>Approved comments</h2>
+        <!-- if:!hasApproved --><p class="empty">No approved comments yet.</p><!-- end:!hasApproved -->
+        <ul class="admin-list">
+            <!-- each:approved -->
+            <li>
+                <div class="grow">
+                    <span class="sub">{{author}} on <a href="{{trackUrl}}">{{trackTitle}}</a> · {{time}}</span>
+                    <p class="text">{{{textHtml}}}</p>
+                </div>
+                <form method="post" action="admin.php">
+                    <input type="hidden" name="csrf" value="{{csrf}}">
+                    <input type="hidden" name="track" value="{{trackUuid}}">
+                    <input type="hidden" name="id" value="{{commentId}}">
+                    <button class="button danger" name="do" value="delete-comment" data-confirm="Delete this comment?">Delete</button>
+                </form>
+            </li>
+            <!-- end:approved -->
+        </ul>
+    </section>
+
+    <section id="users" class="panel">
+        <h2>Users</h2>
+        <p class="hint">Blocking removes the user's likes, comments and follow. A blocked user cannot like, comment or follow again.</p>
+        <!-- if:!hasUsers --><p class="empty">Nobody has logged in yet.</p><!-- end:!hasUsers -->
+        <ul class="admin-list">
+            <!-- each:users -->
+            <li class="<!-- if:blocked -->is-hidden<!-- end:blocked -->">
+                <div class="grow">
+                    <span>{{userLabel}}</span>
+                    <span class="sub">since {{userSince}}<!-- if:isFollower --> · follows<!-- end:isFollower --><!-- if:blocked --> · blocked<!-- end:blocked --></span>
+                </div>
+                <form method="post" action="admin.php">
+                    <input type="hidden" name="csrf" value="{{csrf}}">
+                    <input type="hidden" name="id" value="{{userId}}">
+                    <!-- if:blocked --><button class="button" name="do" value="unblock">Unblock</button><!-- end:blocked -->
+                    <!-- if:!blocked --><button class="button danger" name="do" value="block" data-confirm="Block {{userLabel}} and remove their likes and comments?">Block</button><!-- end:!blocked -->
+                </form>
+            </li>
+            <!-- end:users -->
+        </ul>
+    </section>
+
+    <section id="followers" class="panel">
+        <h2>Followers</h2>
+        <!-- if:!hasFollowers --><p class="empty">No followers yet.</p><!-- end:!hasFollowers -->
+        <ul class="admin-list">
+            <!-- each:followers -->
+            <li>
+                <div class="grow">
+                    <span>{{followerName}}</span>
+                    <span class="sub">{{followerEmail}} · since {{followerSince}}</span>
+                </div>
+                <form method="post" action="admin.php">
+                    <input type="hidden" name="csrf" value="{{csrf}}">
+                    <input type="hidden" name="id" value="{{followerId}}">
+                    <button class="button danger" name="do" value="remove-follower" data-confirm="Remove {{followerName}} from the followers?">Remove</button>
+                </form>
+            </li>
+            <!-- end:followers -->
+        </ul>
+    </section>
+
+    <section id="settings" class="panel">
+        <h2>Settings</h2>
+        <form method="post" action="admin.php" class="settings">
+            <input type="hidden" name="csrf" value="{{csrf}}">
+            <input type="hidden" name="do" value="settings">
+            <label>Title<input type="text" name="title" value="{{settingTitle}}" maxlength="200" required></label>
+            <label>New token from openDAW<input type="password" name="token" autocomplete="off" placeholder="Leave empty to keep the token"></label>
+            <label>New admin password<input type="password" name="password" autocomplete="new-password" placeholder="Leave empty to keep the password"></label>
+            <label>Repeat new admin password<input type="password" name="repeat" autocomplete="new-password"></label>
+            <label>Mail sender<input type="email" name="mailFrom" value="{{settingMailFrom}}" placeholder="{{mailSender}}"></label>
+            <p class="hint">Mails to followers come from this address. Use an address of this domain, otherwise mails land in spam.</p>
+            <label>Google client id<input type="text" name="googleClientId" value="{{settingGoogleClientId}}" autocomplete="off"></label>
+            <label>Google client secret<input type="password" name="googleClientSecret" autocomplete="off" placeholder="<!-- if:googleSecretSet -->Leave empty to keep the secret<!-- end:googleSecretSet -->"></label>
+            <p class="hint">Authorized redirect URI for the Google client: <code>{{redirectUrl}}</code></p>
+            <button class="button primary" type="submit">Save</button>
+        </form>
+    </section>
+</main>
+<!-- include:footer -->
+</body>
+</html>

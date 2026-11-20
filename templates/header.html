@@ -1,0 +1,19 @@
+<header class="site-header">
+    <a class="site-title" href="./">{{siteTitle}}</a>
+    <nav class="site-nav">
+        <!-- if:google -->
+        <button class="button follow<!-- if:following --> active<!-- end:following -->" type="button" data-follow
+                data-login="{{loginUrl}}" data-on="Following" data-off="Follow"><!-- if:following -->Following<!-- end:following --><!-- if:!following -->Follow<!-- end:!following --></button>
+        <!-- if:loggedIn -->
+        <form class="account" method="post" action="api.php?action=logout">
+            <input type="hidden" name="csrf" value="{{csrf}}">
+            <input type="hidden" name="return" value="">
+            <!-- if:userPicture --><img class="avatar" src="{{userPicture}}" alt="{{userName}}" title="{{userName}}" referrerpolicy="no-referrer"><!-- end:userPicture -->
+            <button class="button quiet" type="submit">Log out</button>
+        </form>
+        <!-- end:loggedIn -->
+        <!-- if:!loggedIn --><a class="button quiet" href="{{loginUrl}}">Log in</a><!-- end:!loggedIn -->
+        <!-- end:google -->
+    </nav>
+</header>
+<!-- if:flash --><p class="flash">{{flash}}</p><!-- end:flash -->

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- include:head -->
+    <title>{{title}} · {{siteTitle}}</title>
+    <meta name="description" content="{{shortDescription}}">
+    <meta property="og:type" content="music.song">
+    <meta property="og:title" content="{{title}}">
+    <meta property="og:description" content="{{shortDescription}}">
+    <meta property="og:url" content="{{absoluteUrl}}">
+    <meta property="og:image" content="{{absoluteCover}}">
+    <meta property="og:audio" content="{{absoluteMixdown}}">
+    <meta property="og:audio:type" content="audio/ogg">
+    <meta property="og:site_name" content="{{siteTitle}}">
+    <meta name="twitter:card" content="summary_large_image">
+</head>
+<body class="page-track">
+<!-- include:header -->
+<main class="content track" data-player data-src="{{mixdown}}" data-peaks="{{peaks}}" data-duration="{{seconds}}">
+    <!-- if:hidden --><p class="flash">This track is hidden, only you see it.</p><!-- end:hidden -->
+    <section class="hero">
+        <img class="cover" src="{{cover}}" alt="Cover of {{title}}" width="320" height="320">
+        <div class="info">
+            <h1 class="title">{{title}}</h1>
+            <p class="artist">{{artist}}</p>
+            <dl class="facts">
+                <dt>Published</dt><dd>{{date}}</dd>
+                <!-- if:wasUpdated --><dt>Updated</dt><dd>{{updatedDate}}</dd><!-- end:wasUpdated -->
+                <dt>Length</dt><dd>{{duration}}</dd>
+                <!-- if:bpm --><dt>Tempo</dt><dd>{{bpm}} BPM</dd><!-- end:bpm -->
+            </dl>
+            <!-- if:hasTags --><p class="tags"><!-- each:tags --><span class="tag">{{tag}}</span><!-- end:tags --></p><!-- end:hasTags -->
+            <div class="actions">
+                <!-- if:google -->
+                <button class="like<!-- if:liked --> active<!-- end:liked -->" type="button" data-like="{{uuid}}" data-login="{{loginUrl}}" aria-label="Like">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></svg>
+                    <span data-like-count>{{likes}}</span>
+                </button>
+                <!-- end:google -->
+                <!-- if:hasProject -->
+                <a class="button primary" href="{{openUrl}}" target="_blank" rel="noopener" data-open data-mobile-text="openDAW runs on desktop">Open in openDAW</a>
+                <!-- end:hasProject -->
+                <!-- if:mixdownDownload --><a class="button" href="{{mixdown}}" download="{{mixdownFileName}}">Download mixdown</a><!-- end:mixdownDownload -->
+            </div>
+        </div>
+    </section>
+    <section class="player">
+        <button class="play" type="button" data-play aria-label="Play {{title}}"><!-- include:icons --></button>
+        <div class="waveform" data-waveform data-unsupported-text="Your browser cannot play this track, please update it."><canvas></canvas></div>
+        <span class="time"><span data-position>0:00</span> / {{duration}}</span>
+    </section>
+    <!-- if:hasDescription --><section class="description"><p>{{{descriptionHtml}}}</p></section><!-- end:hasDescription -->
+    <!-- if:google -->
+    <section class="comments" id="comments">
+        <h2>Comments</h2>
+        <!-- if:hasComments -->
+        <ol class="comment-list">
+            <!-- each:comments -->
+            <li class="comment<!-- if:pending --> pending<!-- end:pending --><!-- if:system --> system<!-- end:system -->">
+                <!-- if:system --><p class="text">Updated</p><time>{{time}}</time><!-- end:system -->
+                <!-- if:!system -->
+                <div class="author">
+                    <!-- if:authorPicture --><img class="avatar" src="{{authorPicture}}" alt="" referrerpolicy="no-referrer"><!-- end:authorPicture -->
+                    <span class="name">{{author}}</span>
+                    <time>{{time}}</time>
+                    <!-- if:pending --><span class="badge">Waiting for approval</span><!-- end:pending -->
+                </div>
+                <p class="text">{{{textHtml}}}</p>
+                <!-- end:!system -->
+            </li>
+            <!-- end:comments -->
+        </ol>
+        <!-- end:hasComments -->
+        <!-- if:!hasComments --><p class="empty">No comments yet.</p><!-- end:!hasComments -->
+        <!-- if:loggedIn -->
+        <form class="comment-form" data-comment-form data-track="{{uuid}}">
+            <textarea name="text" maxlength="2000" rows="3" placeholder="Write a comment" required></textarea>
+            <div class="row">
+                <span class="status" data-comment-status>Comments appear after approval.</span>
+                <button class="button primary" type="submit">Send</button>
+            </div>
+        </form>
+        <!-- end:loggedIn -->
+        <!-- if:!loggedIn --><p class="login-hint"><a href="{{loginUrl}}">Log in with Google</a> to comment.</p><!-- end:!loggedIn -->
+    </section>
+    <!-- end:google -->
+</main>
+<!-- include:footer -->
+</body>
+</html>
