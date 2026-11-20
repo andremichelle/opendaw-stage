@@ -278,7 +278,7 @@ check('like without login 401', request('POST', 'api.php?action=like', ['Content
 check('comment without login 401', request('POST', 'api.php?action=comment', ['Content-Type' => 'application/x-www-form-urlencoded', 'X-CSRF' => $csrf], "track=$withProject&text=hi", $visitor)['status'] === 401);
 check('login without Google 404', request('GET', 'api.php?action=login', [], '', $visitor)['status'] === 404);
 check('foreign origin on visitor action 403', request('POST', 'api.php?action=like', ['Origin' => 'https://evil.example', 'X-CSRF' => $csrf], '', $visitor)['status'] === 403);
-check('oauth without state 400', request('GET', 'api.php?action=oauth&code=x&state=y', [], '', $visitor)['status'] === 400);
+check('oauth without state 400', request('GET', 'oauth.php?code=x&state=y', [], '', $visitor)['status'] === 400);
 check('unfollow with a bad key 400', request('GET', 'api.php?action=unfollow&key=zz', [], '', $visitor)['status'] === 400);
 $followersFile = "$data/followers.json";
 file_put_contents($followersFile, json_encode(['google:1' => ['id' => 'google:1', 'name' => 'Ana', 'email' => 'ana@example.com', 'key' => str_repeat('a', 32), 'since' => time()]]));

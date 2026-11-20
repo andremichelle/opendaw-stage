@@ -6,6 +6,8 @@ a private admin page.
 
 No database server, no build step, no Composer, no npm. Plain PHP, HTML, CSS and JavaScript.
 
+How publishing works from the studio: [openDAW manual, Stage Website](https://dev.opendaw.studio/manuals/stage-website).
+
 ## Requirements
 
 1. **PHP 8.1 or newer.** Every common shared host has it (Strato, IONOS, all-inkl, Hetzner, Netcup and the like).
@@ -29,7 +31,9 @@ No database server, no build step, no Composer, no npm. Plain PHP, HTML, CSS and
 
 ## Installation
 
-1. Copy all files of this repository into a folder of your webspace, for example `https://example.com/music/`.
+1. Download the zip of the
+   [latest release](https://github.com/andremichelle/opendaw-stage/releases/latest) ("Source code (zip)"), unpack
+   it and copy the contents of its folder into a folder of your webspace, for example `https://example.com/music/`.
 2. In openDAW, open a project, go to the project info and click **Stage**. Click **Create** next to Token. The
    token is copied to your clipboard. Keep it in your password manager.
 3. Open `https://example.com/music/setup.php`. Enter a title, the token from openDAW and an admin password (at
@@ -42,25 +46,10 @@ Until you have run `setup.php`, anyone who finds the fresh installation could ru
 the site. Run the setup right after uploading the files. Once `config.php` exists, `setup.php` refuses to run
 again. If somebody was faster, delete `config.php` and the `data-…` folder and run the setup again.
 
-### Google login (likes, comments, follow)
+### Google login and mails
 
-1. In the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) create a project, then
-   **Create credentials → OAuth client ID → Web application**.
-2. Add the **Authorized redirect URI** shown on your admin page under Settings, for example
-   `https://example.com/music/api.php?action=oauth`.
-3. Copy the client id and the client secret into Settings on the admin page.
-
-Without Google keys the site works as a player only: no login, no likes, no comments, no follow.
-
-### Mails to followers
-
-When a visitor follows your stage, they get a welcome mail right away. It asks them to look into their spam
-folder and to add the sender to their contacts, because mails sent with PHP's `mail()` often land in spam
-first. Whenever you publish a **new** track (not when you replace one), every follower gets a mail with the link.
-Every mail has an unfollow link.
-
-Set the **Mail sender** on the admin page to an address of your own domain (`music@example.com`). Mails from
-other domains are very likely marked as spam.
+Likes, comments and follow need a Google OAuth client, the mails to followers need a sender address on your
+domain. [MANUAL.md](MANUAL.md) walks you through both, step by step. Without them the site works as a player.
 
 ## Changing the design
 
@@ -89,7 +78,8 @@ The colours are CSS variables at the top of `style.css` (`--color-accent`, `--wa
 
 ## Updating
 
-Replace all files except `config.php`, the `data-…` folder, `media/` and `custom/`. Nothing else holds your data.
+Download the zip of the [latest release](https://github.com/andremichelle/opendaw-stage/releases/latest) and
+replace all files except `config.php`, the `data-…` folder, `media/` and `custom/`. Nothing else holds your data.
 
 ## Backup
 
@@ -103,6 +93,7 @@ Copy `config.php`, the `data-…` folder and `media/`. That is the whole site st
 index.php            list of all tracks
 track.php            single track page, reached as /<track> through .htaccess
 admin.php            admin page (password)
+oauth.php            Google login returns here
 setup.php            first run only
 api.php              uploads from openDAW, likes, comments, follow, Google login, project for Open in openDAW
 lib/                 the PHP code

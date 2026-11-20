@@ -10,7 +10,7 @@ final class Google
 
     public static function redirectUrl(): string
     {
-        return Stage::baseUrl() . 'api.php?action=oauth';
+        return Stage::baseUrl() . 'oauth.php';
     }
 
     public static function authUrl(array $config, string $state): string

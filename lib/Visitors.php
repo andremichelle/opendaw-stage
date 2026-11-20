@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 final class Visitors
 {
-    public const ACTIONS = ['login', 'oauth', 'logout', 'like', 'comment', 'follow', 'unfollow', 'project'];
+    public const ACTIONS = ['login', 'logout', 'like', 'comment', 'follow', 'unfollow', 'project'];
     public const COMMENT_SECONDS = 300;
     public const COMMENT_BYTES = 2000;
 

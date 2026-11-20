@@ -10,7 +10,7 @@ final class Stage
     public const STALE_SECONDS = 86_400;
     public const FILES = ['meta.json', 'cover', 'mixdown.opus', 'peaks.bin', 'project.odb'];
     public const REQUIRED = ['meta.json', 'cover', 'mixdown.opus', 'peaks.bin'];
-    public const RESERVED_SLUGS = ['admin', 'api', 'assets', 'custom', 'index', 'lib', 'media', 'setup', 'templates', 'tests', 'track'];
+    public const RESERVED_SLUGS = ['admin', 'api', 'assets', 'custom', 'index', 'lib', 'media', 'oauth', 'setup', 'templates', 'tests', 'track'];
 
     public static function root(): string
     {
