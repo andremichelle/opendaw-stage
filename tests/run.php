@@ -389,6 +389,8 @@ check('token change needs the current password', str_contains(request('GET', 'ad
 $adminPost(['do' => 'settings', 'section' => 'access', 'token' => $newToken, 'password' => '', 'repeat' => '', 'current' => 'correct horse']);
 $adminPost(['do' => 'settings', 'section' => 'stage', 'title' => 'Renamed Stage']);
 $adminPost(['do' => 'settings', 'section' => 'mail', 'mailFrom' => 'me@example.com']);
+$adminPost(['do' => 'settings', 'section' => 'mail', 'mailFrom' => 'music@example.com', 'test' => '1']);
+check('test mail saves the sender first', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'value="music@example.com"'));
 check('other sections keep their values', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'value="test-id"'));
 $adminPost(['do' => 'settings', 'section' => 'stage', 'title' => '']);
 check('empty title refused', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'Please enter a title'));

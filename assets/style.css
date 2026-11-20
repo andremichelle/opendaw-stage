@@ -837,7 +837,6 @@ input:focus, textarea:focus {
     flex-wrap: wrap;
     align-items: center;
     gap: 12px;
-    margin: 16px 0 8px;
 }
 
 .settings textarea {

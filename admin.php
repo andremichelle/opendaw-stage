@@ -114,16 +114,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             });
             Session::flash("$moved tracks now open " . Stage::STUDIO_PROD_URL . '.');
             Http::redirect('admin.php#tracks');
-        case 'test-mail':
-            $to = (string)($config['ownerEmail'] ?? '');
-            if ($to === '') {
-                Session::flash('Enter your contact address in the Owner panel first, the test mail goes there.');
-            } else {
-                Session::flash(Mailer::test($config, $to)
-                    ? "Your host accepted the test mail to $to. If it does not arrive within a few minutes, look into the spam folder."
-                    : "Your host refused the test mail. Check that the mail sender is an address of your domain, or ask your host whether PHP may send mails.");
-            }
-            Http::redirect('admin.php#settings-mail');
         case 'check-update':
             $latest = Updater::latest();
             if (is_string($latest)) {
@@ -213,7 +203,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     }
                     break;
             }
-            Session::flash(Config::save($config) ? 'Saved.' : 'Could not write config.php.');
+            if (!Config::save($config)) {
+                Session::flash('Could not write config.php.');
+            } elseif ($section === 'mail' && Http::post('test') === '1') {
+                $to = (string)($config['ownerEmail'] ?? '');
+                $from = Mailer::sender($config);
+                Session::flash(match (true) {
+                    $to === '' => 'Saved. Enter your contact address in the Owner panel, the test mail goes there.',
+                    Mailer::test($config, $to) => "Saved. Your host accepted the test mail from $from to $to. If it does not arrive within a few minutes, look into the spam folder.",
+                    default => "Saved. Your host refused the test mail from $from. Use an address of your domain as sender, or ask your host whether PHP may send mails."
+                });
+            } else {
+                Session::flash('Saved.');
+            }
             Http::redirect('admin.php#settings-' . $section);
         default:
             Http::redirect('admin.php');

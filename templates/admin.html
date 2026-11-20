@@ -197,12 +197,11 @@
             <input type="hidden" name="section" value="mail">
             <label>Mail sender<input type="email" name="mailFrom" value="{{settingMailFrom}}" placeholder="{{mailSender}}"></label>
             <!-- if:senderForeign --><p class="warning">This address is not on {{authorizedDomain}}. Mail services refuse mails sent from your server in the name of another domain (like gmail.com). Use an address of {{authorizedDomain}}.</p><!-- end:senderForeign -->
-            <button class="button primary" type="submit">Save</button>
-        </form>
-        <form method="post" action="admin.php" class="mail-test">
-            <input type="hidden" name="csrf" value="{{csrf}}">
-            <button class="button" name="do" value="test-mail">Send test mail</button>
-            <span class="hint">Goes to your contact address from the Owner panel.</span>
+            <div class="mail-test">
+                <button class="button primary" type="submit">Save</button>
+                <button class="button" type="submit" name="test" value="1">Save and send test mail</button>
+                <span class="hint">The test mail goes to your contact address from the Owner panel.</span>
+            </div>
         </form>
         <p class="hint">Last mail to followers: <!-- if:hasMailLog -->{{mailLog}}<!-- end:hasMailLog --><!-- if:!hasMailLog -->none yet.<!-- end:!hasMailLog --></p>
     </section>
