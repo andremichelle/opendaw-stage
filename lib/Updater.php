@@ -31,17 +31,18 @@ final class Updater
 
     public static function latest(): array|string
     {
-        $redirect = self::request('https://github.com/' . self::REPOSITORY . '/releases/latest', 1_000_000);
         $prefix = 'https://github.com/' . self::REPOSITORY . '/releases/tag/';
-        $tag = str_starts_with($redirect['location'], $prefix) ? substr($redirect['location'], strlen($prefix)) : '';
-        if (!self::isTag($tag)) {return 'GitHub did not name a latest release (' . self::describe($redirect) . ').';}
         $refs = self::request('https://github.com/' . self::REPOSITORY . '.git/info/refs?service=git-upload-pack', 5_000_000);
-        $pattern = '/^[0-9a-f]{4}([0-9a-f]{40}) refs\/tags\/' . preg_quote($tag, '/') . '(\^\{\})?$/mD';
-        preg_match_all($pattern, (string)$refs['body'], $matches, PREG_SET_ORDER);
-        $sha = '';
+        preg_match_all('/^[0-9a-f]{4}([0-9a-f]{40}) refs\/tags\/(v\d{1,3}\.\d{1,3}\.\d{1,3})(\^\{\})?$/mD', (string)$refs['body'], $matches, PREG_SET_ORDER);
+        $commits = [];
         foreach ($matches as $match) {
-            if ($sha === '' || ($match[2] ?? '') !== '') {$sha = $match[1];}
+            if (!isset($commits[$match[2]]) || ($match[3] ?? '') !== '') {$commits[$match[2]] = $match[1];}
         }
+        if (count($commits) === 0) {return 'GitHub did not name any release (' . self::describe($refs) . ').';}
+        $tags = array_keys($commits);
+        usort($tags, fn(string $a, string $b) => version_compare(substr($b, 1), substr($a, 1)));
+        $tag = $tags[0];
+        $sha = $commits[$tag];
         if (!self::isSha($sha)) {return "GitHub did not name the commit of $tag (" . self::describe($refs) . ').';}
         $file = self::request('https://raw.githubusercontent.com/' . self::REPOSITORY . '/' . $sha . '/' . self::MANIFEST, 1_000_000);
         $manifest = json_decode((string)$file['body'], true);
