@@ -143,14 +143,18 @@ svg {
 }
 
 .site-footer {
+    position: sticky;
+    z-index: 5;
+    bottom: 0;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     gap: 8px;
-    padding: 16px var(--gap);
+    padding: 12px var(--gap);
     color: var(--color-black);
     font-size: 13px;
     border-top: 1px solid var(--color-panel);
+    background-color: var(--color-background);
 }
 
 .site-footer a {
