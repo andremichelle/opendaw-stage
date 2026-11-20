@@ -99,6 +99,21 @@ svg {
     padding: 8px var(--gap);
 }
 
+.site-name {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.site-subline {
+    color: var(--color-shadow);
+    font-size: 13px;
+}
+
+.site-subline a {
+    color: var(--color-gray);
+}
+
 .site-title {
     color: var(--color-bright);
     font-size: 26px;
