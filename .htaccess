@@ -1,5 +1,6 @@
 <IfModule mod_rewrite.c>
 RewriteEngine On
+RewriteRule ^ - [E=STAGE_SHORT_URLS:1]
 RewriteRule ^(privacy|imprint)$ legal.php?page=$1 [L,QSA]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

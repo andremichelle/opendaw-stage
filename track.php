@@ -14,6 +14,16 @@ if (is_null($track) || ($track['hidden'] && !Session::isAdmin())) {
         ['heading' => 'Not found', 'message' => 'This track does not exist (any more).', 'unfollowKey' => ''])), 404);
 }
 $data = array_merge(Page::common($config, $storage, $track['slug']), Page::track($track, $storage, true));
+$visible = array_values(array_filter($storage->tracks(), fn(array $item) => !$item['hidden']));
+$position = array_search($track['uuid'], array_column($visible, 'uuid'), true);
+$previous = $position === false || $position === 0 ? null : $visible[$position - 1];
+$next = $position === false ? null : ($visible[$position + 1] ?? null);
+$data['hasPrevious'] = !is_null($previous);
+$data['previousTitle'] = $previous['title'] ?? '';
+$data['previousUrl'] = is_null($previous) ? '' : Stage::trackPath($previous['slug']);
+$data['hasNext'] = !is_null($next);
+$data['nextTitle'] = $next['title'] ?? '';
+$data['nextUrl'] = is_null($next) ? '' : Stage::trackPath($next['slug']);
 $data['comments'] = Page::comments($track, $storage);
 $data['hasComments'] = count($data['comments']) > 0;
 Http::html(Template::render('track', $data));

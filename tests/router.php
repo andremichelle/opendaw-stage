@@ -2,6 +2,7 @@
 // Router for local testing with php -S, adds what .htaccess and Apache do: php -S localhost:8000 tests/router.php
 declare(strict_types=1);
 
+putenv('STAGE_SHORT_URLS=1');
 $path = (string)parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
 $root = (string)$_SERVER['DOCUMENT_ROOT'];
 if (preg_match('#^/(privacy|imprint)$#', $path, $legal) === 1) {

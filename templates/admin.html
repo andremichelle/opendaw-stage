@@ -176,7 +176,7 @@
 
     <section id="settings-owner" class="panel">
         <h2>Owner</h2>
-        <p class="hint">Shown on the <a href="privacy" target="_blank" rel="noopener">privacy page</a> and the <a href="imprint" target="_blank" rel="noopener">imprint</a>. Google needs the privacy page for the login.<!-- if:ownerMissing --> Enter at least name and contact address.<!-- end:ownerMissing --></p>
+        <p class="hint">Shown on the <a href="{{privacyPath}}" target="_blank" rel="noopener">privacy page</a> and the <a href="{{imprintPath}}" target="_blank" rel="noopener">imprint</a>. Google needs the privacy page for the login.<!-- if:ownerMissing --> Enter at least name and contact address.<!-- end:ownerMissing --></p>
         <form method="post" action="admin.php" class="settings">
             <input type="hidden" name="csrf" value="{{csrf}}">
             <input type="hidden" name="do" value="settings">

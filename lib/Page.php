@@ -21,6 +21,8 @@ final class Page
             'loginUrl' => 'api.php?action=login&return=' . rawurlencode($return),
             'following' => $following,
             'flash' => Session::flash(),
+            'privacyPath' => Stage::legalPath('privacy'),
+            'imprintPath' => Stage::legalPath('imprint'),
             'year' => date('Y')
         ];
     }
@@ -40,7 +42,7 @@ final class Page
             'slug' => $track['slug'],
             'title' => $track['title'],
             'artist' => $track['artist'],
-            'url' => rawurlencode($track['slug']),
+            'url' => Stage::trackPath($track['slug']),
             'absoluteUrl' => Stage::trackUrl($track['slug']),
             'cover' => $media . $track['cover'] . $version,
             'absoluteCover' => Stage::baseUrl() . $media . $track['cover'] . $version,

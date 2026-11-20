@@ -233,7 +233,7 @@ $approved = [];
 foreach ($tracks as $track) {
     foreach ($storage->comments($track['uuid']) as $comment) {
         if (($comment['system'] ?? false) === true) {continue;}
-        $item = ['trackUuid' => $track['uuid'], 'trackTitle' => $track['title'], 'trackUrl' => $track['slug'],
+        $item = ['trackUuid' => $track['uuid'], 'trackTitle' => $track['title'], 'trackUrl' => Stage::trackPath($track['slug']),
             'commentId' => $comment['id'], 'author' => (string)($comment['name'] ?? ''), 'authorId' => (string)$comment['user'],
             'textHtml' => nl2br(htmlspecialchars($comment['text'], ENT_QUOTES, 'UTF-8')),
             'time' => date('j M Y, H:i', (int)$comment['time']), 'sort' => (int)$comment['time']];
@@ -269,8 +269,8 @@ $data['settingOwnerName'] = (string)($config['ownerName'] ?? '');
 $data['settingOwnerAddress'] = (string)($config['ownerAddress'] ?? '');
 $data['settingOwnerEmail'] = (string)($config['ownerEmail'] ?? '');
 $data['ownerMissing'] = $data['settingOwnerName'] === '' || $data['settingOwnerEmail'] === '';
-$data['privacyUrl'] = Stage::baseUrl() . 'privacy';
-$data['imprintUrl'] = Stage::baseUrl() . 'imprint';
+$data['privacyUrl'] = Stage::baseUrl() . Stage::legalPath('privacy');
+$data['imprintUrl'] = Stage::baseUrl() . Stage::legalPath('imprint');
 $data['authorizedDomain'] = (string)preg_replace(['/:\d+$/', '/^www\./'], '', (string)($_SERVER['HTTP_HOST'] ?? ''));
 $senderDomain = strtolower((string)substr(strrchr(Mailer::sender($config), '@') ?: '', 1));
 $data['senderForeign'] = $senderDomain !== strtolower($data['authorizedDomain']) && !str_ends_with($senderDomain, '.' . strtolower($data['authorizedDomain']));

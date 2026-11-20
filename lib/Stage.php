@@ -36,8 +36,24 @@ final class Stage
         return $origin !== '' && Http::isAllowedOrigin($origin) && $origin !== Http::ownOrigin() ? $origin : self::STUDIO_PROD_URL;
     }
 
+    public static function hasShortUrls(): bool
+    {
+        return getenv('STAGE_SHORT_URLS') === '1' || ($_SERVER['STAGE_SHORT_URLS'] ?? '') === '1'
+            || ($_SERVER['REDIRECT_STAGE_SHORT_URLS'] ?? '') === '1';
+    }
+
+    public static function trackPath(string $slug): string
+    {
+        return self::hasShortUrls() ? rawurlencode($slug) : 'track.php?t=' . rawurlencode($slug);
+    }
+
+    public static function legalPath(string $page): string
+    {
+        return self::hasShortUrls() ? $page : 'legal.php?page=' . $page;
+    }
+
     public static function trackUrl(string $slug): string
     {
-        return self::baseUrl() . rawurlencode($slug);
+        return self::baseUrl() . self::trackPath($slug);
     }
 }

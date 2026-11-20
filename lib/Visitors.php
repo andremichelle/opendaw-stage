@@ -24,7 +24,7 @@ final class Visitors
                 Session::checkCsrf();
                 Session::logout();
             }
-            Http::redirect(self::returnPath(Http::post('return')));
+            Http::redirect(self::returnUrl(self::returnPath(Http::post('return'))));
         }
         $user = Session::user() ?? Http::fail(401, 'login');
         Session::checkCsrf();
@@ -54,6 +54,11 @@ final class Visitors
             return $users;
         });
         if (!$allowed) {Http::fail(429, 'wait');}
+    }
+
+    private static function returnUrl(string $return): string
+    {
+        return $return === './' ? './' : Stage::trackPath($return);
     }
 
     private static function visibleTrack(Storage $storage, string $uuid): array
@@ -88,7 +93,7 @@ final class Visitors
             return $users;
         });
         Session::login($profile);
-        Http::redirect((string)$pending['return']);
+        Http::redirect(self::returnUrl((string)$pending['return']));
     }
 
     private static function like(Storage $storage, array $user): never

@@ -301,6 +301,27 @@ check('short track address', request('GET', 'open-me')['status'] === 200 && str_
 check('list links the short address', str_contains($list['body'], 'href="open-me"'));
 check('unknown short address 404', request('GET', 'nope')['status'] === 404);
 check('old address still works', request('GET', 'track.php?t=open-me')['status'] === 200);
+$plainPort = $port + 1;
+$plain = proc_open([PHP_BINARY, '-d', 'opcache.enable=0', '-S', "127.0.0.1:$plainPort", '-t', $site], [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $plainPipes);
+for ($attempt = 0; $attempt < 50 && @fsockopen('127.0.0.1', $plainPort) === false; $attempt++) {usleep(100_000);}
+$shortBase = $base;
+$base = "http://127.0.0.1:$plainPort/";
+$plainList = request('GET', '')['body'];
+check('without .htaccess the links use the long form', str_contains($plainList, 'href="track.php?t=open-me"')
+    && str_contains($plainList, 'href="legal.php?page=privacy"') && !str_contains($plainList, 'href="open-me"'));
+check('without .htaccess track and privacy pages load', request('GET', 'track.php?t=open-me')['status'] === 200
+    && str_contains(request('GET', 'legal.php?page=privacy')['body'], '<h1>Privacy</h1>'));
+$base = $shortBase;
+proc_terminate($plain);
+proc_close($plain);
+preg_match_all('#<a class="title" href="([a-z0-9-]+)">#', request('GET', '')['body'], $order);
+$middle = $order[1][intdiv(count($order[1]), 2)];
+$navigation = request('GET', $middle)['body'];
+check('single page links the previous and next track in list order', count($order[1]) >= 3
+    && str_contains($navigation, 'class="button previous" href="' . $order[1][array_search($middle, $order[1]) - 1] . '"')
+    && str_contains($navigation, 'class="button next" href="' . $order[1][array_search($middle, $order[1]) + 1] . '"'));
+$first = request('GET', $order[1][0])['body'];
+check('first track has no previous button', !str_contains($first, 'class="button previous"') && str_contains($first, 'class="button next"'));
 check('unknown track 404', request('GET', 'track.php?t=nope', [], '', $visitor)['status'] === 404);
 check('bad slug 404', request('GET', 'track.php?t=../x', [], '', $visitor)['status'] === 404);
 $bundle = request('GET', 'api.php?action=project&t=open-me', ['Origin' => 'https://dev.opendaw.studio']);

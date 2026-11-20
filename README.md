@@ -18,11 +18,12 @@ How publishing works from the studio: [openDAW manual, Stage Website](https://de
     3. let browsers cache the audio and covers for a long time.
 
    On **nginx** the `.htaccess` files are ignored. The data folder still has a random, unguessable name and stored
-   files never execute, but you should deny `/data-*`, `/lib` and `/tests` in your server configuration and add
-   the short track addresses yourself: `rewrite ^/([a-z0-9-]+)$ /track.php?t=$1 last;` (adjust the path when the
-   stage lives in a sub folder).
-4. **mod_rewrite** for the short track addresses (`example.com/music/my-track`). Shared hosts have it switched on.
-   Without it the short links on the pages lead nowhere, only `track.php?t=my-track` works.
+   files never execute, but you should deny `/data-*`, `/lib`, `/tests` and `/tools` in your server configuration.
+   The stage then links the long addresses, unless you add the rewrites yourself and set the variable
+   `STAGE_SHORT_URLS=1` for PHP.
+4. **mod_rewrite** for the short addresses (`example.com/music/my-track`, `/privacy`, `/imprint`). Shared hosts have it
+   switched on. Without it the stage notices on its own and links the long addresses (`track.php?t=my-track`,
+   `legal.php?page=privacy`) instead.
 5. **Write access** for PHP to the site folder. Setup creates `config.php`, the data folder and `media/`.
 6. **Upload size.** Tracks arrive in 1 MB pieces, so the host's upload limits (`upload_max_filesize`,
    `post_max_size`) do not matter. One file may be up to 1 GB.
