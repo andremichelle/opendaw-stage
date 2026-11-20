@@ -152,6 +152,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $token = Http::post('token');
             $password = (string)($_POST['password'] ?? '');
             $mailFrom = Http::post('mailFrom');
+            $ownerName = Http::post('ownerName');
+            $ownerAddress = str_replace("\r\n", "\n", Http::post('ownerAddress'));
+            $ownerEmail = Http::post('ownerEmail');
             $clientId = Http::post('googleClientId');
             $clientSecret = Http::post('googleClientSecret');
             $error = match (true) {
@@ -162,6 +165,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 ($token !== '' || $password !== '') && !password_verify((string)($_POST['current'] ?? ''), (string)$config['passwordHash'])
                     => 'Enter your current admin password to change the token or the password.',
                 $mailFrom !== '' && filter_var($mailFrom, FILTER_VALIDATE_EMAIL) === false => 'The mail sender is not a valid address.',
+                $ownerEmail !== '' && filter_var($ownerEmail, FILTER_VALIDATE_EMAIL) === false => 'The contact address is not a valid address.',
+                strlen($ownerName) > 200 || strlen($ownerAddress) > 1000 => 'The owner details are too long.',
                 default => ''
             };
             if ($error !== '') {
@@ -170,6 +175,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             }
             $config['title'] = $title;
             $config['mailFrom'] = $mailFrom;
+            $config['ownerName'] = $ownerName;
+            $config['ownerAddress'] = $ownerAddress;
+            $config['ownerEmail'] = $ownerEmail;
             $config['googleClientId'] = $clientId;
             if ($clientId === '') {
                 $config['googleClientSecret'] = '';
@@ -224,6 +232,13 @@ $data['hasFollowers'] = count($followers) > 0;
 $data['followerCount'] = count($followers);
 $data['settingTitle'] = (string)($config['title'] ?? '');
 $data['settingMailFrom'] = (string)($config['mailFrom'] ?? '');
+$data['settingOwnerName'] = (string)($config['ownerName'] ?? '');
+$data['settingOwnerAddress'] = (string)($config['ownerAddress'] ?? '');
+$data['settingOwnerEmail'] = (string)($config['ownerEmail'] ?? '');
+$data['ownerMissing'] = $data['settingOwnerName'] === '' || $data['settingOwnerEmail'] === '';
+$data['privacyUrl'] = Stage::baseUrl() . 'privacy';
+$data['imprintUrl'] = Stage::baseUrl() . 'imprint';
+$data['authorizedDomain'] = (string)preg_replace(['/:\d+$/', '/^www\./'], '', (string)($_SERVER['HTTP_HOST'] ?? ''));
 $data['mailSender'] = Mailer::sender($config);
 $data['settingGoogleClientId'] = (string)($config['googleClientId'] ?? '');
 $data['googleSecretSet'] = ($config['googleClientSecret'] ?? '') !== '';

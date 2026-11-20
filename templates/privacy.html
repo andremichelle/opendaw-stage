@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- include:head -->
+    <title>Privacy · {{siteTitle}}</title>
+</head>
+<body class="page-legal">
+<!-- include:header -->
+<main class="content legal">
+    <h1>Privacy</h1>
+    <p>{{siteTitle}} is a music website made with openDAW. This page explains which personal data it handles and why.</p>
+
+    <h2>Who is responsible</h2>
+    <!-- if:hasOwner -->
+    <p>{{ownerName}}<br><!-- if:hasOwnerAddress -->{{{ownerAddressHtml}}}<br><!-- end:hasOwnerAddress --><a href="mailto:{{ownerEmail}}">{{ownerEmail}}</a></p>
+    <!-- end:hasOwner -->
+    <!-- if:!hasOwner --><p>The owner of this website has not entered contact details yet.</p><!-- end:!hasOwner -->
+
+    <h2>Visiting this website</h2>
+    <p>Listening needs no account. This website uses no analytics, no advertising and no tracking. Like every website, it
+        runs on a web host that may keep technical logs (such as your IP address and the pages requested) for a short time
+        to keep the server secure and running.</p>
+
+    <h2>Cookies</h2>
+    <p>This website sets one cookie, named <code>stage</code>, and only after you log in. It keeps you logged in and protects
+        your actions against forged requests. It is removed when you log out or after 30 days.</p>
+
+    <!-- if:google -->
+    <h2>Login with Google</h2>
+    <p>You can log in with your Google account to like tracks, write comments and follow this website. Google then
+        tells this website your name, your profile picture and your mail address, nothing else. Your Google password
+        never reaches this website. Google's own handling of your data is described in the
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a>.</p>
+
+    <h2>Likes, comments and follows</h2>
+    <p>Your name, profile picture and mail address are stored on this website's server, together with your likes,
+        comments and follows. Comments are shown with your name and picture after the owner approved them, your mail
+        address is never shown. Profile pictures are loaded from Google's servers.</p>
+
+    <h2>Mails</h2>
+    <p>If you follow this website, you get a welcome mail and a mail whenever a new track is published. Every mail
+        contains a link to unfollow, which stops the mails at once.</p>
+    <!-- end:google -->
+
+    <h2>Your rights</h2>
+    <p>You can ask which data about you is stored, have it corrected or deleted, and object to its use. Write to the
+        address above. Deleting removes your likes, comments and follow. The data is used on the basis of your consent
+        when you log in or follow (Art. 6 (1) a GDPR) and of the legitimate interest in running this website
+        (Art. 6 (1) f GDPR). You can also complain to a data protection authority.</p>
+</main>
+<!-- include:footer -->
+</body>
+</html>

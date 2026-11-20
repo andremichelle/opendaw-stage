@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- include:head -->
+    <title>Imprint · {{siteTitle}}</title>
+</head>
+<body class="page-legal">
+<!-- include:header -->
+<main class="content legal">
+    <h1>Imprint</h1>
+    <!-- if:hasOwner -->
+    <p>{{ownerName}}<br><!-- if:hasOwnerAddress -->{{{ownerAddressHtml}}}<br><!-- end:hasOwnerAddress --><a href="mailto:{{ownerEmail}}">{{ownerEmail}}</a></p>
+    <p>Responsible for the content: {{ownerName}}</p>
+    <!-- end:hasOwner -->
+    <!-- if:!hasOwner --><p>The owner of this website has not entered contact details yet.</p><!-- end:!hasOwner -->
+    <p>The music on this website was made with <a href="https://opendaw.studio" target="_blank" rel="noopener">openDAW</a>.
+        All rights to the tracks belong to their authors.</p>
+</main>
+<!-- include:footer -->
+</body>
+</html>

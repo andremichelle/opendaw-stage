@@ -99,6 +99,7 @@ index.php            list of all tracks
 track.php            single track page, reached as /<track> through .htaccess
 admin.php            admin page (password)
 oauth.php            Google login returns here
+legal.php            privacy page and imprint, reached as /privacy and /imprint
 setup.php            first run only
 api.php              uploads from openDAW, likes, comments, follow, Google login, project for Open in openDAW
 lib/                 the PHP code

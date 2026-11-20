@@ -14,7 +14,7 @@ final class Updater
     {
         $manifest = Files::readJson($root . '/' . self::MANIFEST, null);
         return is_array($manifest) && self::isVersion((string)($manifest['version'] ?? ''))
-            ? $manifest : ['version' => '1.0.0', 'autoUpdateFrom' => '1.0.0', 'files' => []];
+            ? $manifest : ['version' => '0.0.0', 'autoUpdateFrom' => '0.0.0', 'files' => []];
     }
 
     public static function missingRequirement(string $root): string

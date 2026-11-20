@@ -401,6 +401,19 @@ check('switch stores PROD for DEV tracks', json_decode(file_get_contents("$data/
 check('switch button gone on PROD', !str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'value="studio-prod"'));
 $adminPost(['do' => 'delete-track', 'track' => $withProject]);
 check('delete removes data and media', !is_dir("$site/media/open-me") && !is_dir("$data/tracks/$withProject") && request('GET', 'track.php?t=open-me')['status'] === 404);
+$privacy = request('GET', 'privacy');
+check('privacy page without owner asks for details', $privacy['status'] === 200 && str_contains($privacy['body'], 'has not entered contact details'));
+$adminPost(['do' => 'settings', 'title' => 'Renamed Stage', 'token' => '', 'password' => '', 'repeat' => '', 'mailFrom' => 'me@example.com',
+    'ownerName' => 'Ana <b>Owner</b>', 'ownerAddress' => "Street 1\r\n12345 Town", 'ownerEmail' => 'ana@example.com', 'googleClientId' => 'id', 'googleClientSecret' => 'secret']);
+$privacy = request('GET', 'privacy')['body'];
+check('privacy page shows the owner escaped', str_contains($privacy, 'Ana &lt;b&gt;Owner&lt;/b&gt;') && str_contains($privacy, 'Street 1<br />'));
+check('privacy page explains the Google login', str_contains($privacy, 'Login with Google'));
+check('imprint shows the owner', str_contains(request('GET', 'imprint')['body'], 'Responsible for the content: Ana &lt;b&gt;Owner&lt;/b&gt;'));
+check('footer links privacy and imprint', str_contains(request('GET', '')['body'], 'href="privacy"') && str_contains(request('GET', '')['body'], 'href="imprint"'));
+$googleValues = request('GET', 'admin.php', [], '', $admin)['body'];
+check('settings show the values for Google', str_contains($googleValues, "<code>{$base}privacy</code>") && str_contains($googleValues, "<code>{$base}imprint</code>") && str_contains($googleValues, "<code>{$base}oauth.php</code>"));
+$adminPost(['do' => 'settings', 'title' => 'Renamed Stage', 'token' => '', 'password' => '', 'repeat' => '', 'ownerEmail' => 'nope']);
+check('bad contact address refused', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'contact address is not a valid'));
 $adminPost(['do' => 'logout']);
 check('logout ends the admin session', !str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'id="settings"'));
 $intruder = [];
@@ -437,7 +450,7 @@ foreach ($current['files'] as $file) {
 }
 $configBefore = file_get_contents("$site/config.php");
 $tracksBefore = file_get_contents("$data/index.json");
-$refused = static fn(array $listed, string $from = '1.1.0') => Updater::install($fakeRelease('9.9.9', $from, $base, $listed), '9.9.9', $site, $work());
+$refused = static fn(array $listed, string $from = '') => Updater::install($fakeRelease('9.9.9', $from === '' ? $current['version'] : $from, $base, $listed), '9.9.9', $site, $work());
 check('update refuses config.php', $refused(['config.php', 'release.json']) === 'The release lists a file it may not replace.');
 check('update refuses traversal', $refused(['lib/../config.php', 'release.json']) === 'The release lists a file it may not replace.');
 check('update refuses media, custom and data', $refused(['media/x.php', 'release.json']) === 'The release lists a file it may not replace.'
@@ -446,16 +459,16 @@ check('update refuses dot files', $refused(['.env', 'release.json']) === 'The re
 check('update refuses upper case protected paths', $refused(['CONFIG.PHP', 'release.json']) === 'The release lists a file it may not replace.'
     && $refused(['Media/x.php', 'release.json']) === 'The release lists a file it may not replace.' && $refused(['DATA-x/a', 'release.json']) === 'The release lists a file it may not replace.');
 check('update refuses a list without release.json', $refused(array_keys($base)) === 'The release has no valid release.json.');
-check('update refuses a version other than the checked one', Updater::install($fakeRelease('9.9.9', '1.1.0', $base), '9.9.8', $site, $work()) === 'The release does not match the version that was checked.');
-check('update refuses an older or same version', Updater::install($fakeRelease('1.1.0', '1.0.0', $base), '1.1.0', $site, $work()) === 'This version is already installed.');
+check('update refuses a version other than the checked one', Updater::install($fakeRelease('9.9.9', $current['version'], $base), '9.9.8', $site, $work()) === 'The release does not match the version that was checked.');
+check('update refuses an older or same version', Updater::install($fakeRelease($current['version'], '0.0.0', $base), $current['version'], $site, $work()) === 'This version is already installed.');
 check('update refuses a manual release', Updater::install($fakeRelease('9.9.9', '9.0.0', $base), '9.9.9', $site, $work()) === 'This release must be installed by hand.');
-check('update refuses a missing file', str_starts_with(Updater::install($fakeRelease('9.9.9', '1.1.0', $base, array_merge(array_keys($base), ['lib/Gone.php', 'release.json'])), '9.9.9', $site, $work()), 'The archive'));
+check('update refuses a missing file', str_starts_with(Updater::install($fakeRelease('9.9.9', $current['version'], $base, array_merge(array_keys($base), ['lib/Gone.php', 'release.json'])), '9.9.9', $site, $work()), 'The archive'));
 check('refused updates change nothing', file_get_contents("$site/index.php") === $base['index.php'] && Updater::current($site)['version'] === $current['version']);
 $broken = $base;
 $broken['index.php'] = '<?php echo "broken";';
 $broken['locked/x.txt'] = 'x';
 mkdir("$site/locked", 0555);
-check('failed write restores the previous files', str_contains(Updater::install($fakeRelease('9.9.9', '1.1.0', $broken), '9.9.9', $site, $work()), 'previous version was restored')
+check('failed write restores the previous files', str_contains(Updater::install($fakeRelease('9.9.9', $current['version'], $broken), '9.9.9', $site, $work()), 'previous version was restored')
     && file_get_contents("$site/index.php") === $base['index.php'] && Updater::current($site)['version'] === $current['version']);
 chmod("$site/locked", 0755);
 $interrupted = sys_get_temp_dir() . '/stage-updates-' . bin2hex(random_bytes(4));
@@ -471,7 +484,7 @@ $next = $base;
 $next['index.php'] = $base['index.php'] . "\n// 9.9.9\n";
 $next['lib/New.php'] = '<?php';
 unset($next['oauth.php']);
-check('update installs', Updater::install($fakeRelease('9.9.9', '1.1.0', $next), '9.9.9', $site, $work()) === '');
+check('update installs', Updater::install($fakeRelease('9.9.9', $current['version'], $next), '9.9.9', $site, $work()) === '');
 check('update replaces and adds files', str_ends_with(file_get_contents("$site/index.php"), "// 9.9.9\n") && is_file("$site/lib/New.php"));
 check('update removes files the release dropped', !is_file("$site/oauth.php"));
 check('update keeps config and data', file_get_contents("$site/config.php") === $configBefore && file_get_contents("$data/index.json") === $tracksBefore && is_dir("$site/media"));

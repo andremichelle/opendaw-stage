@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 $path = (string)parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
 $root = (string)$_SERVER['DOCUMENT_ROOT'];
+if (preg_match('#^/(privacy|imprint)$#', $path, $legal) === 1) {
+    $_GET['page'] = $legal[1];
+    $_SERVER['SCRIPT_NAME'] = '/legal.php';
+    require $root . '/legal.php';
+    return true;
+}
 if (preg_match('#^/([a-z0-9-]+)$#', $path, $slug) === 1 && !file_exists($root . $path)) {
     $_GET['t'] = $slug[1];
     $_SERVER['SCRIPT_NAME'] = '/track.php';

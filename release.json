@@ -1,6 +1,6 @@
 {
-    "version": "1.1.0",
-    "autoUpdateFrom": "1.1.0",
+    "version": "0.0.1",
+    "autoUpdateFrom": "0.0.1",
     "files": [
         ".htaccess",
         "LICENSE",
@@ -12,6 +12,7 @@
         "assets/stage.js",
         "assets/style.css",
         "index.php",
+        "legal.php",
         "lib/.htaccess",
         "lib/Config.php",
         "lib/Files.php",
@@ -40,8 +41,10 @@
         "templates/head.html",
         "templates/header.html",
         "templates/icons.html",
+        "templates/imprint.html",
         "templates/list.html",
         "templates/message.html",
+        "templates/privacy.html",
         "templates/track.html",
         "track.php"
     ]
