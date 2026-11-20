@@ -37,7 +37,7 @@ How publishing works from the studio: [openDAW manual, Stage Website](https://de
 2. In openDAW, open a project, go to the project info and click **Stage**. Click **Create** next to Token. The
    token is copied to your clipboard. Keep it in your password manager.
 3. Open `https://example.com/music/setup.php`. Enter a title, the token from openDAW and an admin password (at
-   least 10 characters). The Google fields can stay empty for now.
+   least 10 characters). Google login comes later, on the admin page.
 4. Back in openDAW, enter the address of your stage (`https://example.com/music/`) and click **Publish**.
 
 ### Setup window
@@ -165,11 +165,20 @@ for a long time and fetch them again only after a replace.
 
 ### Security
 
-1. Passwords are stored as hashes (`password_hash`), the token as SHA-256.
-2. Every form and action checks a CSRF token. Sessions are `HttpOnly`, `SameSite=Lax` and `Secure` on HTTPS.
-3. Wrong admin passwords cost two seconds each.
+1. Passwords are stored as hashes (`password_hash`), the token as SHA-256. Changing the token or the password
+   needs the current password.
+2. The admin page only works over HTTPS. Five wrong passwords from one address (or thirty in total) lock the
+   login for 15 minutes.
+3. Every form and action checks a CSRF token. Sessions are `HttpOnly`, `SameSite=Lax`, `Secure` on HTTPS, use
+   strict mode and live in the data folder, not in the host's shared folder. A session starts only on login,
+   plain page views create none.
 4. All text from openDAW and visitors is escaped in the pages.
 5. Uploaded files get fixed names chosen by the site, and their content is checked before they go live.
+6. Hiding a track moves its files to a folder with a random name, so they are not reachable under the old
+   address. "Allow downloading the mixdown" only shows or hides the download button: the player streams the
+   file, so it is public while the track is visible.
+7. Likes and follow are limited to one per second and user, comments to one every five minutes, the welcome mail
+   is sent once per user.
 
 ## Tests
 

@@ -147,11 +147,12 @@
             <label>New token from openDAW<input type="password" name="token" autocomplete="off" placeholder="Leave empty to keep the token"></label>
             <label>New admin password<input type="password" name="password" autocomplete="new-password" placeholder="Leave empty to keep the password"></label>
             <label>Repeat new admin password<input type="password" name="repeat" autocomplete="new-password"></label>
+            <label>Current admin password<input type="password" name="current" autocomplete="current-password" placeholder="Needed to change the token or the password"></label>
             <label>Mail sender<input type="email" name="mailFrom" value="{{settingMailFrom}}" placeholder="{{mailSender}}"></label>
-            <p class="hint">Mails to followers come from this address. Use an address of this domain, otherwise mails land in spam.</p>
+            <p class="hint">Mails to followers come from this address. Use an address of this domain, otherwise mails land in spam. <a href="{{manualMail}}" target="_blank" rel="noopener">How to set up the mails</a></p>
             <label>Google client id<input type="text" name="googleClientId" value="{{settingGoogleClientId}}" autocomplete="off"></label>
             <label>Google client secret<input type="password" name="googleClientSecret" autocomplete="off" placeholder="<!-- if:googleSecretSet -->Leave empty to keep the secret<!-- end:googleSecretSet -->"></label>
-            <p class="hint">Authorized redirect URI for the Google client: <code>{{redirectUrl}}</code></p>
+            <p class="hint">Authorized redirect URI for the Google client: <code>{{redirectUrl}}</code> <a href="{{manualGoogle}}" target="_blank" rel="noopener">How to set up the Google login</a></p>
             <button class="button primary" type="submit">Save</button>
         </form>
     </section>

@@ -11,7 +11,11 @@ if (preg_match('#^/([a-z0-9-]+)$#', $path, $slug) === 1 && !file_exists($root . 
     return true;
 }
 $file = realpath($root . $path);
-if (!str_starts_with($path, '/media/') || $file === false || !is_file($file)) {return false;}
+if (!str_starts_with($path, '/media/')) {return false;}
+if ($file === false || !is_file($file)) {
+    http_response_code(404);
+    return true;
+}
 $size = filesize($file);
 $types = ['opus' => 'audio/ogg', 'jpg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'];
 header('Content-Type: ' . ($types[pathinfo($file, PATHINFO_EXTENSION)] ?? 'application/octet-stream'));

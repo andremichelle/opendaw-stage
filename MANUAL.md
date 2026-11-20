@@ -113,8 +113,8 @@ record in the DNS settings of your domain.
 
 Everything is on `admin.php`:
 
-1. **Tracks:** hide a track (it disappears for visitors, you still see it), show it again, or delete it with
-   its likes and comments.
+1. **Tracks:** hide a track (it disappears for visitors and its files move to a hidden folder, you still see
+   it), show it again, or delete it with its likes and comments.
 2. **Comments:** new comments wait under **Waiting for approval**. Approve or delete them. Approved comments
    can be deleted any time.
 3. **Users:** everyone who logged in. **Block** removes their likes, comments and follow and stops them from

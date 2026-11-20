@@ -31,7 +31,7 @@ final class Page
         $likes = $storage->likes($track['uuid']);
         $comments = array_filter($storage->comments($track['uuid']),
             fn(array $comment) => $comment['status'] === 'approved' && ($comment['system'] ?? false) !== true);
-        $media = 'media/' . rawurlencode($track['slug']) . '/';
+        $media = 'media/' . rawurlencode(Media::folder($track)) . '/';
         $version = '?v=' . $track['updated'];
         $projectUrl = Stage::baseUrl() . 'api.php?action=project&t=' . rawurlencode($track['slug']);
         $description = $withDescription ? (string)($track['description'] ?? '') : '';

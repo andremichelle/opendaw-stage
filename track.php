@@ -6,7 +6,7 @@ require_once __DIR__ . '/lib/bootstrap.php';
 if (!Config::exists()) {Http::redirect('setup.php');}
 $config = Config::load();
 $storage = new JsonStorage(Config::dataRoot($config));
-Session::start();
+Session::resume($config);
 $slug = Http::query('t');
 $track = preg_match('/^[a-z0-9-]{1,80}$/', $slug) === 1 ? $storage->trackBySlug($slug) : null;
 if (is_null($track) || ($track['hidden'] && !Session::isAdmin())) {

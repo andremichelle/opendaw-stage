@@ -16,7 +16,9 @@ final class Config
     public static function load(): array
     {
         $config = self::exists() ? include self::file() : null;
-        return is_array($config) ? $config : [];
+        $config = is_array($config) ? $config : [];
+        Http::$trustForwardedProto = ($config['trustForwardedProto'] ?? true) === true;
+        return $config;
     }
 
     public static function save(array $config): bool

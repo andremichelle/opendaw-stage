@@ -5,6 +5,8 @@ final class Http
 {
     private const ORIGINS = ['https://opendaw.studio', 'https://dev.opendaw.studio'];
 
+    public static bool $trustForwardedProto = false;
+
     public static function json(int $status, array $body): never
     {
         http_response_code($status);
@@ -43,14 +45,24 @@ final class Http
 
     public static function isHttps(): bool
     {
-        if (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') {return true;}
+        return self::isServerHttps() || (self::$trustForwardedProto && self::isForwardedHttps());
+    }
+
+    public static function isServerHttps(): bool
+    {
+        return !empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off';
+    }
+
+    public static function isForwardedHttps(): bool
+    {
         return strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
     }
 
     public static function isLocal(): bool
     {
         $remote = (string)($_SERVER['REMOTE_ADDR'] ?? '');
-        return $remote === '127.0.0.1' || $remote === '::1';
+        $host = (string)preg_replace('/:\d+$/', '', (string)($_SERVER['HTTP_HOST'] ?? ''));
+        return ($remote === '127.0.0.1' || $remote === '::1') && ($host === 'localhost' || $host === '127.0.0.1');
     }
 
     public static function isSecure(): bool

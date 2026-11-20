@@ -10,7 +10,7 @@ if (str_ends_with((string)parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP
     header('Location: ./', true, 301);
     exit;
 }
-Session::start();
+Session::resume($config);
 $tracks = array_values(array_filter($storage->tracks(), fn(array $track) => !$track['hidden']));
 $data = Page::common($config, $storage, '');
 $data['tracks'] = array_map(fn(array $summary) => Page::track($summary, $storage), $tracks);

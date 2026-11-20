@@ -14,13 +14,14 @@ $page = static function (string $body): never {
 $escape = static fn(string $text): string => htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
 if (Config::exists()) {
     http_response_code(403);
-    $page('<h1>openDAW Stage</h1><p>This stage is already set up. Change the settings on the admin page.</p>');
+    $page('<h1>openDAW Stage</h1><p>This stage is already set up. Change the settings on the <a href="admin.php">admin page</a>.</p>');
 }
+Http::$trustForwardedProto = true;
 if (!Http::isSecure()) {
     http_response_code(403);
     $page('<h1>openDAW Stage</h1><p>Setup needs HTTPS. Open this page with https://.</p>');
 }
-$values = ['title' => '', 'token' => '', 'googleClientId' => '', 'googleClientSecret' => ''];
+$values = ['title' => '', 'token' => ''];
 $error = '';
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     foreach (array_keys($values) as $name) {$values[$name] = Http::post($name);}
@@ -34,17 +35,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $error = 'The admin password needs at least 10 characters.';
     } elseif ($password !== $repeat) {
         $error = 'The passwords do not match.';
-    } elseif (($values['googleClientId'] === '') !== ($values['googleClientSecret'] === '')) {
-        $error = 'Google login needs both the client id and the client secret, or neither.';
     } else {
         $config = [
             'version' => Stage::VERSION,
             'title' => $values['title'],
             'tokenHash' => hash('sha256', $values['token']),
             'passwordHash' => password_hash($password, PASSWORD_DEFAULT),
-            'googleClientId' => $values['googleClientId'],
-            'googleClientSecret' => $values['googleClientSecret'],
-            'dataFolder' => 'data-' . bin2hex(random_bytes(16))
+            'googleClientId' => '',
+            'googleClientSecret' => '',
+            'dataFolder' => 'data-' . bin2hex(random_bytes(16)),
+            'trustForwardedProto' => !Http::isServerHttps() && Http::isForwardedHttps()
         ];
         $dataRoot = Config::dataRoot($config);
         $mediaRoot = Config::mediaRoot();
@@ -77,7 +77,6 @@ $page('<h1>openDAW Stage Setup</h1>'
     . $field('token', 'Token from openDAW')
     . $field('password', 'Admin password', 'password')
     . $field('repeat', 'Repeat admin password', 'password')
-    . '<p class="hint">Optional, for likes, comments and follow:</p>'
-    . $field('googleClientId', 'Google client id')
-    . $field('googleClientSecret', 'Google client secret')
-    . '<button class="button primary" type="submit">Set up</button></form>');
+    . '<button class="button primary" type="submit">Set up</button></form>'
+    . '<p class="hint">That is all for now, your stage works as a player right away. Likes, comments and follow need a Google login,'
+    . ' which you can add any time later on the admin page. <a href="' . Stage::MANUAL_URL . '#1-google-login" target="_blank" rel="noopener">The manual explains how.</a></p>');

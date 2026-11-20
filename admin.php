@@ -6,7 +6,8 @@ require_once __DIR__ . '/lib/bootstrap.php';
 if (!Config::exists()) {Http::redirect('setup.php');}
 $config = Config::load();
 $storage = new JsonStorage(Config::dataRoot($config));
-Session::start();
+if (!Http::isSecure()) {Http::redirect('https://' . (string)($_SERVER['HTTP_HOST'] ?? '') . (string)($_SERVER['REQUEST_URI'] ?? '/admin.php'));}
+Session::resume($config);
 header('X-Frame-Options: DENY');
 
 $trackOf = static function (string $uuid) use ($storage): array {
@@ -21,11 +22,14 @@ $trackOf = static function (string $uuid) use ($storage): array {
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $do = Http::post('do');
     if ($do === 'login') {
-        Session::checkCsrf();
-        if (password_verify((string)($_POST['password'] ?? ''), (string)$config['passwordHash'])) {
+        Session::start($config);
+        if (Lockout::isLocked($config)) {
+            Session::flash('Too many wrong passwords. Please try again in 15 minutes.');
+        } elseif (password_verify((string)($_POST['password'] ?? ''), (string)$config['passwordHash'])) {
+            Lockout::clear($config);
             Session::setAdmin(true);
         } else {
-            sleep(2);
+            Lockout::fail($config);
             Session::flash('Wrong password.');
         }
         Http::redirect('admin.php');
@@ -42,7 +46,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         case 'show':
             $storage->transaction(function () use ($storage, $trackOf, $uuid, $do) {
                 $track = $trackOf($uuid);
+                $folder = $do === 'hide' ? Media::hiddenFolder() : $track['slug'];
+                if (Media::folder($track) !== $folder
+                    && !rename(Config::mediaRoot() . '/' . Media::folder($track), Config::mediaRoot() . '/' . $folder)) {
+                    Session::flash('Could not move the files of the track.');
+                    Http::redirect('admin.php#tracks');
+                }
                 $track['hidden'] = $do === 'hide';
+                $track['folder'] = $folder;
                 $storage->saveTrack($track);
             });
             Session::flash($do === 'hide' ? 'The track is hidden.' : 'The track is visible again.');
@@ -50,7 +61,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         case 'delete-track':
             $storage->transaction(function () use ($storage, $trackOf, $uuid) {
                 $track = $trackOf($uuid);
-                Files::removeTree(Config::mediaRoot() . '/' . $track['slug']);
+                Files::removeTree(Config::mediaRoot() . '/' . Media::folder($track));
                 $storage->deleteTrack($uuid);
             });
             Session::flash('The track is deleted.');
@@ -115,6 +126,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $token !== '' && preg_match('/^[A-Za-z0-9_-]{32,128}$/', $token) !== 1 => 'The token is not valid. Copy it again from openDAW.',
                 $password !== '' && strlen($password) < 10 => 'The admin password needs at least 10 characters.',
                 $password !== (string)($_POST['repeat'] ?? '') => 'The passwords do not match.',
+                ($token !== '' || $password !== '') && !password_verify((string)($_POST['current'] ?? ''), (string)$config['passwordHash'])
+                    => 'Enter your current admin password to change the token or the password.',
                 $mailFrom !== '' && filter_var($mailFrom, FILTER_VALIDATE_EMAIL) === false => 'The mail sender is not a valid address.',
                 default => ''
             };
@@ -179,6 +192,8 @@ $data['mailSender'] = Mailer::sender($config);
 $data['settingGoogleClientId'] = (string)($config['googleClientId'] ?? '');
 $data['googleSecretSet'] = ($config['googleClientSecret'] ?? '') !== '';
 $data['redirectUrl'] = Google::redirectUrl();
+$data['manualMail'] = Stage::MANUAL_URL . '#2-mails-to-followers';
+$data['manualGoogle'] = Stage::MANUAL_URL . '#1-google-login';
 $data['devCount'] = count(array_filter($tracks, fn(array $track) => Page::studio($track) === Stage::STUDIO_DEV_URL));
 $data['devUrl'] = Stage::STUDIO_DEV_URL;
 Http::html(Template::render('admin', $data));

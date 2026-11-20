@@ -51,6 +51,16 @@ final class Media
         return str_starts_with(self::head($path, 4), "PK\x03\x04");
     }
 
+    public static function folder(array $track): string
+    {
+        return (string)($track['folder'] ?? $track['slug']);
+    }
+
+    public static function hiddenFolder(): string
+    {
+        return '.hidden-' . bin2hex(random_bytes(16));
+    }
+
     public static function slug(string $title): string
     {
         $ascii = function_exists('iconv') ? (string)iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $title) : $title;

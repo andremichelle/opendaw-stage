@@ -2,6 +2,8 @@
 // Runs the site against a fresh copy of the files git ships (ignored files left out) on php -S. Usage: php tests/run.php
 declare(strict_types=1);
 
+if (PHP_SAPI !== 'cli') {exit;}
+
 $source = dirname(__DIR__);
 $site = sys_get_temp_dir() . '/opendaw-stage-test-' . bin2hex(random_bytes(4));
 $port = 18_000 + random_int(0, 999);
@@ -76,7 +78,7 @@ function uuid(): string
 }
 
 copyRepository($source, $site);
-$server = proc_open([PHP_BINARY, '-S', "127.0.0.1:$port", '-t', $site, __DIR__ . '/router.php'], [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+$server = proc_open([PHP_BINARY, '-d', 'opcache.enable=0', '-d', 'opcache.enable_cli=0', '-S', "127.0.0.1:$port", '-t', $site, __DIR__ . '/router.php'], [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
 for ($attempt = 0; $attempt < 50 && @fsockopen('127.0.0.1', $port) === false; $attempt++) {usleep(100_000);}
 
 $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
@@ -113,7 +115,7 @@ $setup = static fn(array $fields) => request('POST', 'setup.php', $form, http_bu
 check('short password refused', str_contains($setup(['password' => 'short', 'repeat' => 'short'])['body'], 'at least 10'));
 check('password mismatch refused', str_contains($setup(['repeat' => 'other password'])['body'], 'do not match'));
 check('bad token refused', str_contains($setup(['token' => 'abc'])['body'], 'token is not valid'));
-check('half Google keys refused', str_contains($setup(['googleClientId' => 'id'])['body'], 'both'));
+check('setup asks for no Google keys', !str_contains(request('GET', 'setup.php')['body'], 'googleClientId'));
 check('no config after refusals', !is_file("$site/config.php"));
 check('setup succeeds', str_contains($setup([])['body'], 'Your stage is ready'));
 $config = include "$site/config.php";
@@ -252,7 +254,8 @@ check('unchanged list answers 304', request('GET', '', ['If-None-Match' => $list
 preg_match('/name="csrf" content="([0-9a-f]+)"/', $list['body'], $csrfMatch);
 $csrf = $csrfMatch[1] ?? '';
 check('titles are escaped', str_contains($list['body'], '&lt;script&gt;alert(1)&lt;/script&gt;') && !str_contains($list['body'], '<script>alert'));
-check('placeholders inside values stay text', substr_count($list['body'], $csrf) === 1);
+check('placeholders inside values stay text', str_contains($list['body'], '&lt;/script&gt;&#123;&#123;csrf}}'));
+check('anonymous page views start no session', $csrf === '' && !isset($visitor['stage']));
 $page = request('GET', 'track.php?t=open-me', [], '', $visitor);
 check('track page renders', $page['status'] === 200 && str_contains($page['body'], '<h1 class="title">Open Me</h1>'));
 check('track page has Open Graph tags', str_contains($page['body'], 'property="og:image" content="' . $base . 'media/open-me/cover.jpg?v='));
@@ -276,7 +279,7 @@ check('bundle served with CORS', $bundle['status'] === 200 && $bundle['body'] ==
 check('bundle of a track without project 404', request('GET', 'api.php?action=project&t=night-drive')['status'] === 404);
 
 echo "Visitors\n";
-check('like without csrf 403', request('POST', 'api.php?action=like', ['Content-Type' => 'application/x-www-form-urlencoded'], "track=$withProject", $visitor)['status'] === 403);
+check('like without session 401', request('POST', 'api.php?action=like', ['Content-Type' => 'application/x-www-form-urlencoded'], "track=$withProject", $visitor)['status'] === 401);
 check('like without login 401', request('POST', 'api.php?action=like', ['Content-Type' => 'application/x-www-form-urlencoded', 'X-CSRF' => $csrf], "track=$withProject", $visitor)['status'] === 401);
 check('comment without login 401', request('POST', 'api.php?action=comment', ['Content-Type' => 'application/x-www-form-urlencoded', 'X-CSRF' => $csrf], "track=$withProject&text=hi", $visitor)['status'] === 401);
 check('login without Google 404', request('GET', 'api.php?action=login', [], '', $visitor)['status'] === 404);
@@ -289,6 +292,48 @@ check('unfollow link asks first', str_contains(request('GET', 'api.php?action=un
 check('follower still there before confirming', count(json_decode(file_get_contents($followersFile), true)) === 1);
 request('POST', 'api.php?action=unfollow', ['Content-Type' => 'application/x-www-form-urlencoded'], 'key=' . str_repeat('a', 32), $visitor);
 check('unfollow removes the follower', count(json_decode(file_get_contents($followersFile), true)) === 0);
+
+echo "Logged in visitor\n";
+$userId = 'google:42';
+$userCsrf = str_repeat('c', 32);
+$sessionId = bin2hex(random_bytes(16));
+file_put_contents("$data/users.json", json_encode([$userId => ['id' => $userId, 'name' => 'Ana', 'picture' => '', 'email' => 'ana@example.com',
+    'created' => time(), 'blocked' => false, 'lastComment' => 0]]));
+file_put_contents("$data/sessions/sess_$sessionId", 'csrf|' . serialize($userCsrf) . 'user|' . serialize(['id' => $userId, 'name' => 'Ana', 'picture' => '']));
+$ana = ['stage' => $sessionId];
+$asAna = static function (string $action, string $body, string $csrf = '') use (&$ana, $userCsrf) {
+    return request('POST', "api.php?action=$action", ['Content-Type' => 'application/x-www-form-urlencoded', 'X-CSRF' => $csrf === '' ? $userCsrf : $csrf], $body, $ana);
+};
+check('foreign session id refused (strict mode)', request('GET', 'local-test', [], '', ...[$foreign = ['stage' => str_repeat('a', 32)]])['status'] === 200 && !is_file("$data/sessions/sess_" . str_repeat('a', 32)));
+check('wrong csrf 403 for a logged in user', $asAna('like', "track=$withProject", str_repeat('x', 32))['status'] === 403);
+$liked = $asAna('like', "track=$withProject");
+check('like works', $liked['status'] === 200 && $liked['json'] === ['liked' => true, 'likes' => 1]);
+check('second like within a second 429', $asAna('like', "track=$withProject")['status'] === 429);
+usleep(1_100_000);
+check('like toggles after a second', $asAna('like', "track=$withProject")['json']['liked'] === false);
+$commented = $asAna('comment', "track=$withProject&text=" . rawurlencode('Nice <b>track</b>'));
+$stored = json_decode(file_get_contents("$data/tracks/$withProject/comments.json"), true);
+check('comment saved as pending', $commented['status'] === 200 && end($stored)['status'] === 'pending');
+$withGoogle = include "$site/config.php";
+file_put_contents("$site/config.php", "<?php\nreturn " . var_export(['googleClientId' => 'test-id', 'googleClientSecret' => 'test-secret'] + $withGoogle, true) . ";\n");
+$anaPage = request('GET', 'open-me', [], '', $ana)['body'];
+check('author sees own pending comment', str_contains($anaPage, 'Waiting for approval') && str_contains($anaPage, 'Nice &lt;b&gt;track&lt;/b&gt;'));
+check('others do not see the pending comment', !str_contains(request('GET', 'open-me')['body'], 'Nice &lt;b&gt;'));
+file_put_contents("$site/config.php", "<?php\nreturn " . var_export($withGoogle, true) . ";\n");
+check('second comment within 5 minutes 429', $asAna('comment', "track=$withProject&text=again")['status'] === 429);
+usleep(1_100_000);
+check('follow works', $asAna('follow', '')['json'] === ['following' => true]);
+$welcomed = json_decode(file_get_contents("$data/users.json"), true)[$userId]['welcomed'] ?? 0;
+check('welcome mail marked as sent', $welcomed > 0);
+usleep(1_100_000);
+check('unfollow works', $asAna('follow', '')['json'] === ['following' => false]);
+sleep(1);
+usleep(100_000);
+$asAna('follow', '');
+check('refollow sends no second welcome mail', (json_decode(file_get_contents("$data/users.json"), true)[$userId]['welcomed'] ?? 0) === $welcomed);
+file_put_contents("$data/tracks/$withProject/comments.json", '[]');
+file_put_contents("$data/tracks/$withProject/likes.json", '[]');
+file_put_contents("$data/followers.json", '[]');
 
 echo "Admin\n";
 $admin = [];
@@ -313,11 +358,13 @@ check('admin page after login', str_contains($panel['body'], 'id="settings"') &&
 check('admin action without csrf 403', request('POST', 'admin.php', ['Content-Type' => 'application/x-www-form-urlencoded'], http_build_query(['do' => 'hide', 'track' => $withProject]), $admin)['status'] === 403);
 $adminPost(['do' => 'hide', 'track' => $withProject]);
 check('hidden track leaves the list', !str_contains(request('GET', '')['body'], 'Open Me'));
+check('hidden track media moved away', !is_dir("$site/media/open-me") && request('GET', 'media/open-me/mixdown.opus')['status'] === 404);
 check('hidden track 404 for visitors', request('GET', 'track.php?t=open-me')['status'] === 404);
 check('hidden track visible to the admin', request('GET', 'track.php?t=open-me', [], '', $admin)['status'] === 200);
 check('hidden track bundle 404', request('GET', 'api.php?action=project&t=open-me')['status'] === 404);
 $adminPost(['do' => 'show', 'track' => $withProject]);
 check('shown track is back', str_contains(request('GET', '')['body'], 'Open Me'));
+check('shown track media back in place', is_file("$site/media/open-me/mixdown.opus") && request('GET', 'media/open-me/mixdown.opus')['status'] === 200);
 $adminPost(['do' => 'settings', 'title' => 'My Stage', 'token' => '', 'password' => '', 'repeat' => '', 'mailFrom' => '', 'googleClientId' => 'test-id', 'googleClientSecret' => 'test-secret']);
 check('Google keys show likes and comments', str_contains(request('GET', 'open-me')['body'], 'id="comments"'));
 file_put_contents("$data/tracks/$withProject/comments.json", json_encode([
@@ -338,6 +385,8 @@ $adminPost(['do' => 'settings', 'title' => 'Renamed Stage', 'token' => 'short', 
 check('settings refuse a bad token', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'token is not valid'));
 $newToken = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
 $adminPost(['do' => 'settings', 'title' => 'Renamed Stage', 'token' => $newToken, 'password' => '', 'repeat' => '', 'mailFrom' => 'me@example.com', 'googleClientId' => '', 'googleClientSecret' => '']);
+check('token change needs the current password', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'Enter your current admin password'));
+$adminPost(['do' => 'settings', 'title' => 'Renamed Stage', 'token' => $newToken, 'password' => '', 'repeat' => '', 'current' => 'correct horse', 'mailFrom' => 'me@example.com', 'googleClientId' => '', 'googleClientSecret' => '']);
 check('settings rename the stage', str_contains(request('GET', '')['body'], 'Renamed Stage'));
 check('old token stops working', request('GET', 'api.php?action=alive', $auth)['status'] === 401);
 check('new token works', request('GET', 'api.php?action=alive', ['X-OpenDAW-Token' => $newToken])['status'] === 200);
@@ -354,6 +403,13 @@ $adminPost(['do' => 'delete-track', 'track' => $withProject]);
 check('delete removes data and media', !is_dir("$site/media/open-me") && !is_dir("$data/tracks/$withProject") && request('GET', 'track.php?t=open-me')['status'] === 404);
 $adminPost(['do' => 'logout']);
 check('logout ends the admin session', !str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'id="settings"'));
+$intruder = [];
+for ($attempt = 0; $attempt < 5; $attempt++) {
+    request('POST', 'admin.php', ['Content-Type' => 'application/x-www-form-urlencoded'], http_build_query(['do' => 'login', 'password' => "wrong $attempt"]), $intruder);
+}
+request('POST', 'admin.php', ['Content-Type' => 'application/x-www-form-urlencoded'], http_build_query(['do' => 'login', 'password' => 'correct horse']), $intruder);
+$locked = request('GET', 'admin.php', [], '', $intruder)['body'];
+check('five wrong passwords lock the login', str_contains($locked, 'Too many wrong passwords') && !str_contains($locked, 'id="settings"'));
 
 proc_terminate($server);
 proc_close($server);

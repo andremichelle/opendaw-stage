@@ -30,7 +30,7 @@ final class Publisher
             $existing = $this->storage->track($uuid);
             $now = time();
             $slug = $existing['slug'] ?? $this->uniqueSlug($meta['title']);
-            $folder = $this->mediaRoot . '/' . $slug;
+            $folder = $this->mediaRoot . '/' . (is_null($existing) ? $slug : Media::folder($existing));
             if (!Files::ensureDir($folder)) {Http::fail(507, 'storage');}
             foreach (glob($folder . '/cover.*') ?: [] as $old) {unlink($old);}
             if (!$hasProject && is_file($folder . '/project.odb')) {unlink($folder . '/project.odb');}
@@ -41,6 +41,7 @@ final class Publisher
             }
             $track = ['uuid' => $uuid, 'slug' => $slug, ...$meta, 'cover' => 'cover.' . $coverExtension,
                 'project' => $hasProject, 'studio' => $studio, 'hidden' => $existing['hidden'] ?? false,
+                'folder' => is_null($existing) ? $slug : Media::folder($existing),
                 'created' => $existing['created'] ?? $now, 'updated' => $now];
             $this->storage->saveTrack($track);
             if (!is_null($existing)) {

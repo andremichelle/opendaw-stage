@@ -6,27 +6,31 @@ final class Visitors
     public const ACTIONS = ['login', 'logout', 'like', 'comment', 'follow', 'unfollow', 'project'];
     public const COMMENT_SECONDS = 300;
     public const COMMENT_BYTES = 2000;
+    public const ACTION_SECONDS = 1.0;
 
     public static function handle(string $action, array $config, Storage $storage): never
     {
         $method = (string)($_SERVER['REQUEST_METHOD'] ?? '');
         if ($action === 'project') {self::project($storage);}
-        Session::start();
-        match ($action) {
-            'login' => self::login($config),
-            'oauth' => self::oauth($config, $storage),
-            'unfollow' => self::unfollow($config, $storage, $method),
-            default => null
-        };
+        if ($action === 'unfollow') {self::unfollow($config, $storage, $method);}
+        if ($action === 'login' || $action === 'oauth') {
+            Session::start($config);
+            $action === 'login' ? self::login($config) : self::oauth($config, $storage);
+        }
         if ($method !== 'POST') {Http::fail(405, 'method');}
-        Session::checkCsrf();
+        Session::resume($config);
         if ($action === 'logout') {
-            Session::logout();
+            if (!is_null(Session::user())) {
+                Session::checkCsrf();
+                Session::logout();
+            }
             Http::redirect(self::returnPath(Http::post('return')));
         }
         $user = Session::user() ?? Http::fail(401, 'login');
+        Session::checkCsrf();
         $record = $storage->user($user['id']);
         if (is_null($record) || ($record['blocked'] ?? false) === true) {Http::fail(403, 'blocked');}
+        if ($action === 'like' || $action === 'follow') {self::throttle($storage, $user['id']);}
         match ($action) {
             'like' => self::like($storage, $user),
             'comment' => self::comment($storage, $user),
@@ -38,6 +42,18 @@ final class Visitors
     public static function returnPath(string $return): string
     {
         return preg_match('/^[a-z0-9-]{1,80}$/', $return) === 1 ? $return : './';
+    }
+
+    private static function throttle(Storage $storage, string $id): void
+    {
+        $now = microtime(true);
+        $allowed = false;
+        $storage->updateUsers(function (array $users) use ($id, $now, &$allowed) {
+            $allowed = $now - (float)($users[$id]['lastAction'] ?? 0) >= self::ACTION_SECONDS;
+            if ($allowed) {$users[$id]['lastAction'] = $now;}
+            return $users;
+        });
+        if (!$allowed) {Http::fail(429, 'wait');}
     }
 
     private static function visibleTrack(Storage $storage, string $uuid): array
@@ -116,7 +132,13 @@ final class Visitors
             $followers[$record['id']] = $added;
             return $followers;
         });
-        if (!is_null($added)) {Mailer::welcome($config, $added);}
+        if (!is_null($added) && (int)($record['welcomed'] ?? 0) === 0) {
+            Mailer::welcome($config, $added);
+            $storage->updateUsers(function (array $users) use ($record) {
+                $users[$record['id']]['welcomed'] = time();
+                return $users;
+            });
+        }
         Http::json(200, ['following' => !is_null($added)]);
     }
 
@@ -135,7 +157,7 @@ final class Visitors
     {
         $slug = Http::query('t');
         $track = preg_match('/^[a-z0-9-]{1,80}$/', $slug) === 1 ? $storage->trackBySlug($slug) : null;
-        $file = is_null($track) ? '' : Config::mediaRoot() . '/' . $track['slug'] . '/project.odb';
+        $file = is_null($track) ? '' : Config::mediaRoot() . '/' . Media::folder($track) . '/project.odb';
         if (is_null($track) || $track['hidden'] || !$track['project'] || !is_file($file)) {Http::fail(404, 'project');}
         while (ob_get_level() > 0) {ob_end_clean();}
         header('Content-Type: application/octet-stream');

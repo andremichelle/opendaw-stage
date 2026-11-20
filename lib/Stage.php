@@ -5,6 +5,7 @@ final class Stage
 {
     public const VERSION = 1;
     public const STUDIO_PROD_URL = 'https://opendaw.studio';
+    public const MANUAL_URL = 'https://github.com/andremichelle/opendaw-stage/blob/main/MANUAL.md';
     public const STUDIO_DEV_URL = 'https://dev.opendaw.studio';
     public const MAX_BYTES = 1_073_741_824;
     public const STALE_SECONDS = 86_400;
