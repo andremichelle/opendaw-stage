@@ -5,6 +5,7 @@
     const audio = new Audio()
     audio.preload = "none"
     let current = null
+    const players = []
     const duration = () => current !== null && !Number.isFinite(audio.duration) ? current.duration : audio.duration
     const formatTime = seconds => {
         const total = Math.max(0, Math.floor(seconds))
@@ -101,6 +102,11 @@
     audio.addEventListener("ended", () => {
         current?.element.classList.remove("playing")
         update()
+        const next = players[players.indexOf(current) + 1]
+        if (next !== undefined) {
+            next.element.scrollIntoView({block: "nearest", behavior: "smooth"})
+            toggle(next)
+        }
     })
     audio.addEventListener("seeked", update)
     document.querySelectorAll("[data-player]").forEach(element => {
@@ -113,6 +119,7 @@
             duration: Number(element.dataset.duration) || 0,
             peaks: null
         }
+        players.push(player)
         if (!canPlay) {
             player.button.disabled = true
             waveform.classList.add("unsupported")
