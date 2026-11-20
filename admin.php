@@ -116,8 +116,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             Http::redirect('admin.php#tracks');
         case 'check-update':
             $latest = Updater::latest();
-            if (is_null($latest)) {
-                Session::flash('Could not ask GitHub for the latest release. Please try again later.');
+            if (is_string($latest)) {
+                Session::flash("Could not check for updates: $latest");
             } else {
                 Files::writeJson(Config::dataRoot($config) . '/update.json', $latest + ['checked' => time()]);
                 Session::flash(Updater::isNewer($latest, Stage::root()) ? "Version {$latest['version']} is available." : 'Your stage is up to date.');

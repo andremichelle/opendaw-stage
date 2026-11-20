@@ -193,6 +193,14 @@
             setTimeout(() => button.textContent = "Copy", 1500)
         })
     })
+    document.querySelectorAll("[data-toast]").forEach(toast => {
+        const close = () => {
+            toast.classList.add("closing")
+            setTimeout(() => toast.remove(), 300)
+        }
+        toast.addEventListener("click", close)
+        setTimeout(close, 10_000)
+    })
     document.querySelectorAll("[data-confirm]").forEach(button => {
         button.addEventListener("click", event => {
             if (!confirm(button.dataset.confirm)) {event.preventDefault()}

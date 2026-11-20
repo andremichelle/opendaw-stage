@@ -29,19 +29,26 @@ final class Updater
         };
     }
 
-    public static function latest(): ?array
+    public static function latest(): array|string
     {
-        $release = json_decode((string)self::fetch('https://api.github.com/repos/' . self::REPOSITORY . '/releases/latest', 1_000_000), true);
-        $tag = is_array($release) ? (string)($release['tag_name'] ?? '') : '';
-        if (!self::isTag($tag)) {return null;}
-        $commit = json_decode((string)self::fetch('https://api.github.com/repos/' . self::REPOSITORY . '/commits/' . $tag, 5_000_000), true);
-        $sha = is_array($commit) ? (string)($commit['sha'] ?? '') : '';
-        if (!self::isSha($sha)) {return null;}
-        $manifest = json_decode((string)self::fetch('https://raw.githubusercontent.com/' . self::REPOSITORY . '/' . $sha . '/' . self::MANIFEST, 1_000_000), true);
+        $redirect = self::request('https://github.com/' . self::REPOSITORY . '/releases/latest', 1_000_000);
+        $prefix = 'https://github.com/' . self::REPOSITORY . '/releases/tag/';
+        $tag = str_starts_with($redirect['location'], $prefix) ? substr($redirect['location'], strlen($prefix)) : '';
+        if (!self::isTag($tag)) {return 'GitHub did not name a latest release (' . self::describe($redirect) . ').';}
+        $refs = self::request('https://github.com/' . self::REPOSITORY . '.git/info/refs?service=git-upload-pack', 5_000_000);
+        $pattern = '/^[0-9a-f]{4}([0-9a-f]{40}) refs\/tags\/' . preg_quote($tag, '/') . '(\^\{\})?$/mD';
+        preg_match_all($pattern, (string)$refs['body'], $matches, PREG_SET_ORDER);
+        $sha = '';
+        foreach ($matches as $match) {
+            if ($sha === '' || ($match[2] ?? '') !== '') {$sha = $match[1];}
+        }
+        if (!self::isSha($sha)) {return "GitHub did not name the commit of $tag (" . self::describe($refs) . ').';}
+        $file = self::request('https://raw.githubusercontent.com/' . self::REPOSITORY . '/' . $sha . '/' . self::MANIFEST, 1_000_000);
+        $manifest = json_decode((string)$file['body'], true);
         if (!is_array($manifest) || ($manifest['version'] ?? '') !== substr($tag, 1)
-            || !self::isVersion((string)($manifest['autoUpdateFrom'] ?? ''))) {return null;}
+            || !self::isVersion((string)($manifest['autoUpdateFrom'] ?? ''))) {return "The release $tag has no valid release.json (" . self::describe($file) . ').';}
         return ['tag' => $tag, 'sha' => $sha, 'version' => $manifest['version'], 'autoUpdateFrom' => $manifest['autoUpdateFrom'],
-            'url' => 'https://github.com/' . self::REPOSITORY . '/releases/tag/' . $tag];
+            'url' => $prefix . $tag];
     }
 
     public static function recover(string $root, string $updates): string
@@ -200,21 +207,40 @@ final class Updater
 
     private static function fetch(string $url, int $maxBytes): ?string
     {
+        $response = self::request($url, $maxBytes);
+        return $response['status'] === 200 ? $response['body'] : null;
+    }
+
+    private static function describe(array $response): string
+    {
+        return $response['status'] === 0 ? 'no connection' : 'answer ' . $response['status'];
+    }
+
+    private static function request(string $url, int $maxBytes): array
+    {
         if (function_exists('curl_init')) {
             $curl = curl_init($url);
             curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 60, CURLOPT_FOLLOWLOCATION => false,
                 CURLOPT_PROTOCOLS => CURLPROTO_HTTPS, CURLOPT_USERAGENT => 'opendaw-stage', CURLOPT_SSL_VERIFYPEER => true,
-                CURLOPT_HTTPHEADER => ['Accept: application/vnd.github+json, */*'], CURLOPT_MAXFILESIZE => $maxBytes,
-                CURLOPT_NOPROGRESS => false,
+                CURLOPT_MAXFILESIZE => $maxBytes, CURLOPT_NOPROGRESS => false,
                 CURLOPT_PROGRESSFUNCTION => fn($resource, int $total, int $received) => $received > $maxBytes ? 1 : 0]);
             $body = curl_exec($curl);
             $status = (int)curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+            $location = (string)curl_getinfo($curl, CURLINFO_REDIRECT_URL);
             curl_close($curl);
-            return is_string($body) && $status === 200 && strlen($body) <= $maxBytes ? $body : null;
+            return ['status' => is_string($body) && strlen($body) <= $maxBytes ? $status : 0,
+                'body' => is_string($body) ? $body : null, 'location' => $location];
         }
-        $context = stream_context_create(['http' => ['timeout' => 60, 'follow_location' => 0, 'ignore_errors' => false,
-            'header' => "User-Agent: opendaw-stage\r\nAccept: application/vnd.github+json, */*"]]);
+        $context = stream_context_create(['http' => ['timeout' => 60, 'follow_location' => 0, 'ignore_errors' => true,
+            'header' => "User-Agent: opendaw-stage"]]);
         $body = @file_get_contents($url, false, $context, 0, $maxBytes + 1);
-        return is_string($body) && strlen($body) <= $maxBytes ? $body : null;
+        $headers = function_exists('http_get_last_response_headers') ? (http_get_last_response_headers() ?? []) : ($http_response_header ?? []);
+        preg_match('#^HTTP/\S+ (\d{3})#', $headers[0] ?? '', $status);
+        $location = '';
+        foreach ($headers as $header) {
+            if (stripos($header, 'Location:') === 0) {$location = trim(substr($header, 9));}
+        }
+        return ['status' => is_string($body) && strlen($body) <= $maxBytes ? (int)($status[1] ?? 0) : 0,
+            'body' => is_string($body) ? $body : null, 'location' => $location];
     }
 }
