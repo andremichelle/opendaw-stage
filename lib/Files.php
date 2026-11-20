@@ -33,7 +33,7 @@ final class Files
 
     public static function ensureDir(string $path): bool
     {
-        return is_dir($path) || mkdir($path, 0755, true);
+        return is_dir($path) || @mkdir($path, 0755, true) || is_dir($path);
     }
 
     public static function removeTree(string $path): bool

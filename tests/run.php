@@ -78,7 +78,7 @@ function uuid(): string
 }
 
 copyRepository($source, $site);
-$server = proc_open([PHP_BINARY, '-d', 'opcache.enable=0', '-d', 'opcache.enable_cli=0', '-S', "127.0.0.1:$port", '-t', $site, __DIR__ . '/router.php'], [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+$server = proc_open([PHP_BINARY, '-d', 'opcache.enable=0', '-d', 'opcache.enable_cli=0', '-S', "127.0.0.1:$port", '-t', $site, __DIR__ . '/router.php'], [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes, null, ['PHP_CLI_SERVER_WORKERS' => '8'] + getenv());
 for ($attempt = 0; $attempt < 50 && @fsockopen('127.0.0.1', $port) === false; $attempt++) {usleep(100_000);}
 
 $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
@@ -161,6 +161,35 @@ check('retried chunk overwrites', request('POST', "api.php?action=commit&track=$
     && file_get_contents("$data/staging/$track/peaks.bin") === 'aaaacccc');
 check('repeated commit after success 200', request('POST', "api.php?action=commit&track=$track&file=peaks.bin&session=$session&count=2&size=8", $auth)['status'] === 200);
 check('session removed after commit', !is_dir("$data/sessions/$session"));
+
+echo "Parallel uploads\n";
+$parallel = static function (array $urls, string $body) use ($base, $auth): array {
+    $multi = curl_multi_init();
+    $handles = [];
+    foreach ($urls as $url) {
+        $curl = curl_init($base . $url);
+        curl_setopt_array($curl, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body, CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ['X-OpenDAW-Token: ' . $auth['X-OpenDAW-Token'], 'Content-Type: application/octet-stream']]);
+        curl_multi_add_handle($multi, $curl);
+        $handles[] = $curl;
+    }
+    do {
+        curl_multi_exec($multi, $running);
+        curl_multi_select($multi);
+    } while ($running > 0);
+    return array_map(fn($curl) => curl_getinfo($curl, CURLINFO_RESPONSE_CODE), $handles);
+};
+$failures = 0;
+for ($round = 0; $round < 10; $round++) {
+    $racing = uuid();
+    $session = uuid();
+    $statuses = $parallel(["api.php?action=upload&track=$racing&file=meta.json", "api.php?action=upload&track=$racing&file=cover",
+        "api.php?action=upload&track=$racing&file=peaks.bin", "api.php?action=chunk&session=$session&index=0",
+        "api.php?action=chunk&session=$session&index=1", "api.php?action=chunk&session=$session&index=2",
+        "api.php?action=chunk&session=$session&index=3"], 'x');
+    $failures += count(array_filter($statuses, fn(int $status) => $status !== 200));
+}
+check('parallel uploads into a new folder all succeed', $failures === 0, "$failures failed");
 
 echo "Publish\n";
 $track = uuid();
