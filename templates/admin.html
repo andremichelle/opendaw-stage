@@ -16,7 +16,7 @@
             <a href="#users">Users</a>
             <a href="#followers">Followers <span class="count">{{followerCount}}</span></a>
             <a href="#updates">Updates<!-- if:updateKnown --> <span class="badge">{{updateVersion}}</span><!-- end:updateKnown --></a>
-            <a href="#settings">Settings</a>
+            <a href="#settings-stage">Settings</a>
         </nav>
         <form method="post" action="admin.php">
             <input type="hidden" name="csrf" value="{{csrf}}">
@@ -162,35 +162,79 @@
         </div>
     </section>
 
-    <section id="settings" class="panel">
-        <h2>Settings</h2>
+
+    <section id="settings-stage" class="panel">
+        <h2>Stage</h2>
         <form method="post" action="admin.php" class="settings">
             <input type="hidden" name="csrf" value="{{csrf}}">
             <input type="hidden" name="do" value="settings">
+            <input type="hidden" name="section" value="stage">
             <label>Title<input type="text" name="title" value="{{settingTitle}}" maxlength="200" required></label>
-            <label>New token from openDAW<input type="password" name="token" autocomplete="off" placeholder="Leave empty to keep the token"></label>
-            <label>New admin password<input type="password" name="password" autocomplete="new-password" placeholder="Leave empty to keep the password"></label>
-            <label>Repeat new admin password<input type="password" name="repeat" autocomplete="new-password"></label>
-            <label>Current admin password<input type="password" name="current" autocomplete="current-password" placeholder="Needed to change the token or the password"></label>
-            <label>Owner name<input type="text" name="ownerName" value="{{settingOwnerName}}" maxlength="200" autocomplete="name"></label>
-            <label>Owner postal address<textarea name="ownerAddress" rows="3" maxlength="1000" autocomplete="street-address">{{settingOwnerAddress}}</textarea></label>
-            <label>Contact address<input type="email" name="ownerEmail" value="{{settingOwnerEmail}}" autocomplete="email"></label>
-            <p class="hint">Shown on the <a href="privacy" target="_blank" rel="noopener">privacy page</a> and the <a href="imprint" target="_blank" rel="noopener">imprint</a>. Google needs the privacy page for the login.<!-- if:ownerMissing --> Enter at least name and contact address.<!-- end:ownerMissing --></p>
-            <label>Mail sender<input type="email" name="mailFrom" value="{{settingMailFrom}}" placeholder="{{mailSender}}"></label>
-            <p class="hint">Mails to followers come from this address. Use an address of this domain, otherwise mails land in spam.<br><a href="{{manualMail}}" target="_blank" rel="noopener">How to set up the mails</a></p>
-            <label>Google client id<input type="text" name="googleClientId" value="{{settingGoogleClientId}}" autocomplete="off"></label>
-            <label>Google client secret<input type="password" name="googleClientSecret" autocomplete="off" placeholder="<!-- if:googleSecretSet -->Leave empty to keep the secret<!-- end:googleSecretSet -->"></label>
-            <dl class="google-values">
-                <dt>Application home page</dt><dd><code>{{baseUrl}}</code></dd>
-                <dt>Application privacy policy link</dt><dd><code>{{privacyUrl}}</code></dd>
-                <dt>Application terms of service link</dt><dd><code>{{imprintUrl}}</code></dd>
-                <dt>Authorized domain</dt><dd><code>{{authorizedDomain}}</code></dd>
-                <dt>Authorized redirect URI</dt><dd><code>{{redirectUrl}}</code></dd>
-            </dl>
-            <p class="hint">Enter these values on Google's Branding and Clients pages.<br><a href="{{manualGoogle}}" target="_blank" rel="noopener">How to set up the Google login</a></p>
             <button class="button primary" type="submit">Save</button>
         </form>
     </section>
+
+    <section id="settings-owner" class="panel">
+        <h2>Owner</h2>
+        <p class="hint">Shown on the <a href="privacy" target="_blank" rel="noopener">privacy page</a> and the <a href="imprint" target="_blank" rel="noopener">imprint</a>. Google needs the privacy page for the login.<!-- if:ownerMissing --> Enter at least name and contact address.<!-- end:ownerMissing --></p>
+        <form method="post" action="admin.php" class="settings">
+            <input type="hidden" name="csrf" value="{{csrf}}">
+            <input type="hidden" name="do" value="settings">
+            <input type="hidden" name="section" value="owner">
+            <label>Name<input type="text" name="ownerName" value="{{settingOwnerName}}" maxlength="200" autocomplete="name"></label>
+            <label>Postal address (optional)<textarea name="ownerAddress" rows="3" maxlength="1000" autocomplete="street-address">{{settingOwnerAddress}}</textarea></label>
+            <label>Contact address<input type="email" name="ownerEmail" value="{{settingOwnerEmail}}" autocomplete="email"></label>
+            <button class="button primary" type="submit">Save</button>
+        </form>
+    </section>
+
+    <section id="settings-mail" class="panel">
+        <h2>Mail</h2>
+        <p class="hint">Mails to followers come from this address. Use an address of this domain, otherwise mails land in spam.<br><a href="{{manualMail}}" target="_blank" rel="noopener">How to set up the mails</a></p>
+        <form method="post" action="admin.php" class="settings">
+            <input type="hidden" name="csrf" value="{{csrf}}">
+            <input type="hidden" name="do" value="settings">
+            <input type="hidden" name="section" value="mail">
+            <label>Mail sender<input type="email" name="mailFrom" value="{{settingMailFrom}}" placeholder="{{mailSender}}"></label>
+            <button class="button primary" type="submit">Save</button>
+        </form>
+    </section>
+
+    <section id="settings-google" class="panel">
+        <h2>Google login</h2>
+        <p class="hint">For likes, comments and follow. Enter these values on Google's Branding and Clients pages, then paste the client ID and secret below.<br><a href="{{manualGoogle}}" target="_blank" rel="noopener">How to set up the Google login</a></p>
+        <dl class="google-values">
+            <dt>Application home page</dt><dd><code>{{baseUrl}}</code><button class="button copy" type="button" data-copy="{{baseUrl}}">Copy</button></dd>
+            <dt>Application privacy policy link</dt><dd><code>{{privacyUrl}}</code><button class="button copy" type="button" data-copy="{{privacyUrl}}">Copy</button></dd>
+            <dt>Application terms of service link</dt><dd><code>{{imprintUrl}}</code><button class="button copy" type="button" data-copy="{{imprintUrl}}">Copy</button></dd>
+            <dt>Authorized domain</dt><dd><code>{{authorizedDomain}}</code><button class="button copy" type="button" data-copy="{{authorizedDomain}}">Copy</button></dd>
+            <dt>Authorized redirect URI</dt><dd><code>{{redirectUrl}}</code><button class="button copy" type="button" data-copy="{{redirectUrl}}">Copy</button></dd>
+        </dl>
+        <form method="post" action="admin.php" class="settings">
+            <input type="hidden" name="csrf" value="{{csrf}}">
+            <input type="hidden" name="do" value="settings">
+            <input type="hidden" name="section" value="google">
+            <label>Client ID<input type="text" name="googleClientId" value="{{settingGoogleClientId}}" autocomplete="off"></label>
+            <label>Client secret<input type="password" name="googleClientSecret" autocomplete="off" placeholder="<!-- if:googleSecretSet -->Leave empty to keep the secret<!-- end:googleSecretSet -->"></label>
+            <button class="button primary" type="submit">Save</button>
+        </form>
+    </section>
+
+    <section id="settings-access" class="panel">
+        <h2>Token and password</h2>
+        <p class="hint">Changing the token or the password needs your current password.</p>
+        <form method="post" action="admin.php" class="settings">
+            <input type="hidden" name="csrf" value="{{csrf}}">
+            <input type="hidden" name="do" value="settings">
+            <input type="hidden" name="section" value="access">
+            <label>New token from openDAW<input type="password" name="token" autocomplete="off" placeholder="Leave empty to keep the token"></label>
+            <label>New admin password<input type="password" name="password" autocomplete="new-password" placeholder="Leave empty to keep the password"></label>
+            <label>Repeat new admin password<input type="password" name="repeat" autocomplete="new-password"></label>
+            <label>Current admin password<input type="password" name="current" autocomplete="current-password"></label>
+            <button class="button primary" type="submit">Save</button>
+        </form>
+    </section>
+
 </main>
 <!-- include:footer -->
 </body>

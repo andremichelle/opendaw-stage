@@ -148,46 +148,63 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             Session::flash($error === '' ? "Your stage is updated to version {$latest['version']}." : $error);
             Http::redirect('admin.php#updates');
         case 'settings':
-            $title = Http::post('title');
+            $section = Http::post('section');
             $token = Http::post('token');
             $password = (string)($_POST['password'] ?? '');
-            $mailFrom = Http::post('mailFrom');
-            $ownerName = Http::post('ownerName');
             $ownerAddress = str_replace("\r\n", "\n", Http::post('ownerAddress'));
-            $ownerEmail = Http::post('ownerEmail');
-            $clientId = Http::post('googleClientId');
-            $clientSecret = Http::post('googleClientSecret');
-            $error = match (true) {
-                $title === '' || strlen($title) > 200 => 'Please enter a title for your stage.',
-                $token !== '' && preg_match('/^[A-Za-z0-9_-]{32,128}$/', $token) !== 1 => 'The token is not valid. Copy it again from openDAW.',
-                $password !== '' && strlen($password) < 10 => 'The admin password needs at least 10 characters.',
-                $password !== (string)($_POST['repeat'] ?? '') => 'The passwords do not match.',
-                ($token !== '' || $password !== '') && !password_verify((string)($_POST['current'] ?? ''), (string)$config['passwordHash'])
-                    => 'Enter your current admin password to change the token or the password.',
-                $mailFrom !== '' && filter_var($mailFrom, FILTER_VALIDATE_EMAIL) === false => 'The mail sender is not a valid address.',
-                $ownerEmail !== '' && filter_var($ownerEmail, FILTER_VALIDATE_EMAIL) === false => 'The contact address is not a valid address.',
-                strlen($ownerName) > 200 || strlen($ownerAddress) > 1000 => 'The owner details are too long.',
-                default => ''
+            $error = match ($section) {
+                'stage' => Http::post('title') === '' || strlen(Http::post('title')) > 200 ? 'Please enter a title for your stage.' : '',
+                'access' => match (true) {
+                    $token === '' && $password === '' => 'Enter a new token or a new password.',
+                    $token !== '' && preg_match('/^[A-Za-z0-9_-]{32,128}$/D', $token) !== 1 => 'The token is not valid. Copy it again from openDAW.',
+                    $password !== '' && strlen($password) < 10 => 'The admin password needs at least 10 characters.',
+                    $password !== (string)($_POST['repeat'] ?? '') => 'The passwords do not match.',
+                    !password_verify((string)($_POST['current'] ?? ''), (string)$config['passwordHash'])
+                        => 'Enter your current admin password to change the token or the password.',
+                    default => ''
+                },
+                'owner' => match (true) {
+                    Http::post('ownerEmail') !== '' && filter_var(Http::post('ownerEmail'), FILTER_VALIDATE_EMAIL) === false
+                        => 'The contact address is not a valid address.',
+                    strlen(Http::post('ownerName')) > 200 || strlen($ownerAddress) > 1000 => 'The owner details are too long.',
+                    default => ''
+                },
+                'mail' => Http::post('mailFrom') !== '' && filter_var(Http::post('mailFrom'), FILTER_VALIDATE_EMAIL) === false
+                    ? 'The mail sender is not a valid address.' : '',
+                'google' => '',
+                default => 'Unknown settings.'
             };
             if ($error !== '') {
                 Session::flash($error);
-                Http::redirect('admin.php#settings');
+                Http::redirect('admin.php#settings-' . $section);
             }
-            $config['title'] = $title;
-            $config['mailFrom'] = $mailFrom;
-            $config['ownerName'] = $ownerName;
-            $config['ownerAddress'] = $ownerAddress;
-            $config['ownerEmail'] = $ownerEmail;
-            $config['googleClientId'] = $clientId;
-            if ($clientId === '') {
-                $config['googleClientSecret'] = '';
-            } elseif ($clientSecret !== '') {
-                $config['googleClientSecret'] = $clientSecret;
+            switch ($section) {
+                case 'stage':
+                    $config['title'] = Http::post('title');
+                    break;
+                case 'access':
+                    if ($token !== '') {$config['tokenHash'] = hash('sha256', $token);}
+                    if ($password !== '') {$config['passwordHash'] = password_hash($password, PASSWORD_DEFAULT);}
+                    break;
+                case 'owner':
+                    $config['ownerName'] = Http::post('ownerName');
+                    $config['ownerAddress'] = $ownerAddress;
+                    $config['ownerEmail'] = Http::post('ownerEmail');
+                    break;
+                case 'mail':
+                    $config['mailFrom'] = Http::post('mailFrom');
+                    break;
+                case 'google':
+                    $config['googleClientId'] = Http::post('googleClientId');
+                    if (Http::post('googleClientId') === '') {
+                        $config['googleClientSecret'] = '';
+                    } elseif (Http::post('googleClientSecret') !== '') {
+                        $config['googleClientSecret'] = Http::post('googleClientSecret');
+                    }
+                    break;
             }
-            if ($token !== '') {$config['tokenHash'] = hash('sha256', $token);}
-            if ($password !== '') {$config['passwordHash'] = password_hash($password, PASSWORD_DEFAULT);}
-            Session::flash(Config::save($config) ? 'The settings are saved.' : 'Could not write config.php.');
-            Http::redirect('admin.php#settings');
+            Session::flash(Config::save($config) ? 'Saved.' : 'Could not write config.php.');
+            Http::redirect('admin.php#settings-' . $section);
         default:
             Http::redirect('admin.php');
     }

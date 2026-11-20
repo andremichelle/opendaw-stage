@@ -354,7 +354,7 @@ $adminPost = static function (array $fields) use (&$admin, $adminCsrf) {
     return request('POST', 'admin.php', ['Content-Type' => 'application/x-www-form-urlencoded'], http_build_query($fields + ['csrf' => $adminCsrf]), $admin);
 };
 $panel = request('GET', 'admin.php', [], '', $admin);
-check('admin page after login', str_contains($panel['body'], 'id="settings"') && str_contains($panel['body'], 'Open Me'));
+check('admin page after login', str_contains($panel['body'], 'id="settings-stage"') && str_contains($panel['body'], 'Open Me'));
 check('admin action without csrf 403', request('POST', 'admin.php', ['Content-Type' => 'application/x-www-form-urlencoded'], http_build_query(['do' => 'hide', 'track' => $withProject]), $admin)['status'] === 403);
 $adminPost(['do' => 'hide', 'track' => $withProject]);
 check('hidden track leaves the list', !str_contains(request('GET', '')['body'], 'Open Me'));
@@ -365,7 +365,7 @@ check('hidden track bundle 404', request('GET', 'api.php?action=project&t=open-m
 $adminPost(['do' => 'show', 'track' => $withProject]);
 check('shown track is back', str_contains(request('GET', '')['body'], 'Open Me'));
 check('shown track media back in place', is_file("$site/media/open-me/mixdown.opus") && request('GET', 'media/open-me/mixdown.opus')['status'] === 200);
-$adminPost(['do' => 'settings', 'title' => 'My Stage', 'token' => '', 'password' => '', 'repeat' => '', 'mailFrom' => '', 'googleClientId' => 'test-id', 'googleClientSecret' => 'test-secret']);
+$adminPost(['do' => 'settings', 'section' => 'google', 'googleClientId' => 'test-id', 'googleClientSecret' => 'test-secret']);
 check('Google keys show likes and comments', str_contains(request('GET', 'open-me')['body'], 'id="comments"'));
 file_put_contents("$data/tracks/$withProject/comments.json", json_encode([
     ['id' => 'c1', 'user' => 'google:2', 'name' => 'Bob', 'picture' => '', 'text' => 'Pending one', 'time' => time(), 'status' => 'pending'],
@@ -381,12 +381,17 @@ $adminPost(['do' => 'block', 'id' => 'google:2']);
 check('block removes comments and likes', json_decode(file_get_contents("$data/tracks/$withProject/likes.json"), true) === ['google:3']
     && json_decode(file_get_contents("$data/tracks/$withProject/comments.json"), true) === []);
 check('block marks the user', json_decode(file_get_contents("$data/users.json"), true)['google:2']['blocked'] === true);
-$adminPost(['do' => 'settings', 'title' => 'Renamed Stage', 'token' => 'short', 'password' => '', 'repeat' => '', 'mailFrom' => '', 'googleClientId' => '', 'googleClientSecret' => '']);
+$adminPost(['do' => 'settings', 'section' => 'access', 'token' => 'short', 'password' => '', 'repeat' => '', 'current' => 'correct horse']);
 check('settings refuse a bad token', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'token is not valid'));
 $newToken = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
-$adminPost(['do' => 'settings', 'title' => 'Renamed Stage', 'token' => $newToken, 'password' => '', 'repeat' => '', 'mailFrom' => 'me@example.com', 'googleClientId' => '', 'googleClientSecret' => '']);
+$adminPost(['do' => 'settings', 'section' => 'access', 'token' => $newToken, 'password' => '', 'repeat' => '']);
 check('token change needs the current password', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'Enter your current admin password'));
-$adminPost(['do' => 'settings', 'title' => 'Renamed Stage', 'token' => $newToken, 'password' => '', 'repeat' => '', 'current' => 'correct horse', 'mailFrom' => 'me@example.com', 'googleClientId' => '', 'googleClientSecret' => '']);
+$adminPost(['do' => 'settings', 'section' => 'access', 'token' => $newToken, 'password' => '', 'repeat' => '', 'current' => 'correct horse']);
+$adminPost(['do' => 'settings', 'section' => 'stage', 'title' => 'Renamed Stage']);
+$adminPost(['do' => 'settings', 'section' => 'mail', 'mailFrom' => 'me@example.com']);
+check('other sections keep their values', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'value="test-id"'));
+$adminPost(['do' => 'settings', 'section' => 'stage', 'title' => '']);
+check('empty title refused', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'Please enter a title'));
 check('settings rename the stage', str_contains(request('GET', '')['body'], 'Renamed Stage'));
 check('old token stops working', request('GET', 'api.php?action=alive', $auth)['status'] === 401);
 check('new token works', request('GET', 'api.php?action=alive', ['X-OpenDAW-Token' => $newToken])['status'] === 200);
@@ -403,8 +408,8 @@ $adminPost(['do' => 'delete-track', 'track' => $withProject]);
 check('delete removes data and media', !is_dir("$site/media/open-me") && !is_dir("$data/tracks/$withProject") && request('GET', 'track.php?t=open-me')['status'] === 404);
 $privacy = request('GET', 'privacy');
 check('privacy page without owner asks for details', $privacy['status'] === 200 && str_contains($privacy['body'], 'has not entered contact details'));
-$adminPost(['do' => 'settings', 'title' => 'Renamed Stage', 'token' => '', 'password' => '', 'repeat' => '', 'mailFrom' => 'me@example.com',
-    'ownerName' => 'Ana <b>Owner</b>', 'ownerAddress' => "Street 1\r\n12345 Town", 'ownerEmail' => 'ana@example.com', 'googleClientId' => 'id', 'googleClientSecret' => 'secret']);
+$adminPost(['do' => 'settings', 'section' => 'owner', 'ownerName' => 'Ana <b>Owner</b>', 'ownerAddress' => "Street 1\r\n12345 Town", 'ownerEmail' => 'ana@example.com']);
+$adminPost(['do' => 'settings', 'section' => 'google', 'googleClientId' => 'id', 'googleClientSecret' => 'secret']);
 $privacy = request('GET', 'privacy')['body'];
 check('privacy page shows the owner escaped', str_contains($privacy, 'Ana &lt;b&gt;Owner&lt;/b&gt;') && str_contains($privacy, 'Street 1<br />'));
 check('privacy page explains the Google login', str_contains($privacy, 'Login with Google'));
@@ -412,17 +417,17 @@ check('imprint shows the owner', str_contains(request('GET', 'imprint')['body'],
 check('footer links privacy and imprint', str_contains(request('GET', '')['body'], 'href="privacy"') && str_contains(request('GET', '')['body'], 'href="imprint"'));
 $googleValues = request('GET', 'admin.php', [], '', $admin)['body'];
 check('settings show the values for Google', str_contains($googleValues, "<code>{$base}privacy</code>") && str_contains($googleValues, "<code>{$base}imprint</code>") && str_contains($googleValues, "<code>{$base}oauth.php</code>"));
-$adminPost(['do' => 'settings', 'title' => 'Renamed Stage', 'token' => '', 'password' => '', 'repeat' => '', 'ownerEmail' => 'nope']);
+$adminPost(['do' => 'settings', 'section' => 'owner', 'ownerName' => 'Ana', 'ownerEmail' => 'nope']);
 check('bad contact address refused', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'contact address is not a valid'));
 $adminPost(['do' => 'logout']);
-check('logout ends the admin session', !str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'id="settings"'));
+check('logout ends the admin session', !str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'id="settings-stage"'));
 $intruder = [];
 for ($attempt = 0; $attempt < 5; $attempt++) {
     request('POST', 'admin.php', ['Content-Type' => 'application/x-www-form-urlencoded'], http_build_query(['do' => 'login', 'password' => "wrong $attempt"]), $intruder);
 }
 request('POST', 'admin.php', ['Content-Type' => 'application/x-www-form-urlencoded'], http_build_query(['do' => 'login', 'password' => 'correct horse']), $intruder);
 $locked = request('GET', 'admin.php', [], '', $intruder)['body'];
-check('five wrong passwords lock the login', str_contains($locked, 'Too many wrong passwords') && !str_contains($locked, 'id="settings"'));
+check('five wrong passwords lock the login', str_contains($locked, 'Too many wrong passwords') && !str_contains($locked, 'id="settings-stage"'));
 
 echo "Updater\n";
 require_once "$site/lib/bootstrap.php";

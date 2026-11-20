@@ -186,6 +186,13 @@
             link.textContent = link.dataset.mobileText
         })
     }
+    document.querySelectorAll("[data-copy]").forEach(button => {
+        button.addEventListener("click", async () => {
+            const copied = await navigator.clipboard?.writeText(button.dataset.copy).then(() => true, () => false)
+            button.textContent = copied ? "Copied" : "Failed"
+            setTimeout(() => button.textContent = "Copy", 1500)
+        })
+    })
     document.querySelectorAll("[data-confirm]").forEach(button => {
         button.addEventListener("click", event => {
             if (!confirm(button.dataset.confirm)) {event.preventDefault()}

@@ -31,16 +31,16 @@
             </dl>
             <!-- if:hasTags --><p class="tags"><!-- each:tags --><span class="tag">{{tag}}</span><!-- end:tags --></p><!-- end:hasTags -->
             <div class="actions">
-                <!-- if:google -->
-                <button class="like<!-- if:liked --> active<!-- end:liked -->" type="button" data-like="{{uuid}}" data-login="{{loginUrl}}" aria-label="Like">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></svg>
-                    <span data-like-count>{{likes}}</span>
-                </button>
-                <!-- end:google -->
                 <!-- if:hasProject -->
                 <a class="button primary" href="{{openUrl}}" target="_blank" rel="noopener" data-open data-mobile-text="openDAW runs on desktop">Open in openDAW</a>
                 <!-- end:hasProject -->
                 <!-- if:mixdownDownload --><a class="button" href="{{mixdown}}" download="{{mixdownFileName}}">Download mixdown</a><!-- end:mixdownDownload -->
+                <!-- if:google -->
+                <button class="like push-right<!-- if:liked --> active<!-- end:liked -->" type="button" data-like="{{uuid}}" data-login="{{loginUrl}}" aria-label="Like">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></svg>
+                    <span data-like-count>{{likes}}</span>
+                </button>
+                <!-- end:google -->
             </div>
         </div>
     </section>

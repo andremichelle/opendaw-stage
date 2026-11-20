@@ -339,6 +339,31 @@ input:focus, textarea:focus {
     stroke-width: 1.8;
 }
 
+.info .tag {
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.info .tags {
+    margin: 0;
+    gap: 8px;
+}
+
+.actions .push-right {
+    margin-left: auto;
+}
+
+.actions .like {
+    gap: 6px;
+    font-size: 17px;
+}
+
+.actions .like svg {
+    width: 26px;
+    height: 26px;
+}
+
 .like.active {
     color: var(--color-red);
 }
@@ -686,6 +711,15 @@ input:focus, textarea:focus {
     margin-top: 12px;
 }
 
+.admin .panel > .hint {
+    margin: 8px 0 16px;
+    font-size: 13px;
+}
+
+.admin .panel > .google-values {
+    margin-bottom: 16px;
+}
+
 .admin .panel h2:not(:first-child) {
     margin-top: 24px;
 }
@@ -786,6 +820,26 @@ input:focus, textarea:focus {
     user-select: all;
 }
 
+.google-values code {
+    white-space: nowrap;
+    overflow-wrap: normal;
+}
+
+.google-values dd {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.button.copy {
+    min-height: 22px;
+    min-width: 60px;
+    padding: 0 8px;
+    font-size: 12px;
+    user-select: none;
+}
+
 .legal {
     max-width: 720px;
 }
@@ -806,6 +860,11 @@ input:focus, textarea:focus {
 
     .google-values dd {
         margin-bottom: 8px;
+    }
+
+    .google-values code {
+        white-space: normal;
+        overflow-wrap: anywhere;
     }
 }
 
