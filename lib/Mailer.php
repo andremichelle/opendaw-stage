@@ -23,7 +23,8 @@ final class Mailer
             'Content-Transfer-Encoding' => '8bit',
             'List-Unsubscribe' => '<' . $unfollowUrl . '>'
         ];
-        return @mail($to, self::encode(str_replace(["\r", "\n"], ' ', $subject)), $text, $headers);
+        $subject = self::encode(str_replace(["\r", "\n"], ' ', $subject));
+        return @mail($to, $subject, $text, $headers, '-f' . $from) || @mail($to, $subject, $text, $headers);
     }
 
     public static function welcome(array $config, array $follower): bool
@@ -36,16 +37,25 @@ final class Mailer
         return self::send($config, $follower['email'], "You follow {$title}", $text, $url);
     }
 
-    public static function announce(array $config, array $followers, array $track): void
+    public static function announce(array $config, array $followers, array $track): array
     {
         $title = (string)($config['title'] ?? 'openDAW Stage');
+        $accepted = 0;
         foreach ($followers as $follower) {
             $url = self::unfollowUrl($follower['key']);
             $by = $track['artist'] === '' ? '' : ' by ' . $track['artist'];
             $text = "Hi {$follower['name']},\n\n{$title} published a new track: {$track['title']}{$by}\n"
                 . Stage::trackUrl($track['slug']) . "\n\nUnfollow: {$url}\n";
-            self::send($config, $follower['email'], "New track: {$track['title']}", $text, $url);
+            if (self::send($config, $follower['email'], "New track: {$track['title']}", $text, $url)) {$accepted++;}
         }
+        return ['time' => time(), 'track' => $track['title'], 'followers' => count($followers), 'accepted' => $accepted];
+    }
+
+    public static function test(array $config, string $to): bool
+    {
+        $title = (string)($config['title'] ?? 'openDAW Stage');
+        $text = "This is a test mail from {$title}:\n" . Stage::baseUrl() . "\n\nIf it reached your inbox, mails to your followers work.\n";
+        return self::send($config, $to, "Test mail from {$title}", $text, Stage::baseUrl());
     }
 
     public static function unfollowUrl(string $key): string

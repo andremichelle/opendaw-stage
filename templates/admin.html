@@ -196,8 +196,15 @@
             <input type="hidden" name="do" value="settings">
             <input type="hidden" name="section" value="mail">
             <label>Mail sender<input type="email" name="mailFrom" value="{{settingMailFrom}}" placeholder="{{mailSender}}"></label>
+            <!-- if:senderForeign --><p class="warning">This address is not on {{authorizedDomain}}. Mail services refuse mails sent from your server in the name of another domain (like gmail.com). Use an address of {{authorizedDomain}}.</p><!-- end:senderForeign -->
             <button class="button primary" type="submit">Save</button>
         </form>
+        <form method="post" action="admin.php" class="mail-test">
+            <input type="hidden" name="csrf" value="{{csrf}}">
+            <button class="button" name="do" value="test-mail">Send test mail</button>
+            <span class="hint">Goes to your contact address from the Owner panel.</span>
+        </form>
+        <p class="hint">Last mail to followers: <!-- if:hasMailLog -->{{mailLog}}<!-- end:hasMailLog --><!-- if:!hasMailLog -->none yet.<!-- end:!hasMailLog --></p>
     </section>
 
     <section id="settings-google" class="panel">

@@ -30,11 +30,11 @@ If Google says `redirect_uri_mismatch`, the redirect URI in the client differs f
 
 Followers get a welcome mail and a mail for every new track you publish (not for a replaced one).
 
-1. On the admin page, under **Settings**, enter your own address as **Mail sender**, ideally one of your website's
-   domain, and click **Save**.
-2. Follow your stage once yourself. If the welcome mail lands in spam, mark it as not spam.
-
-If no mail arrives at all, ask your host whether PHP may send mails.
+1. On the admin page, panel **Mail**, enter an address of your stage's own domain as **Mail sender**, for example
+   `music@example.com`, and click **Save**. Create that address at your host if it does not exist. An address of
+   another domain, like your Gmail address, does not work: mail services refuse such mails.
+2. Click **Send test mail**. It goes to your contact address from the **Owner** panel.
+3. If it lands in spam, mark it as not spam. If your host refuses it, ask your host whether PHP may send mails.
 
 ## 3. Moderation
 

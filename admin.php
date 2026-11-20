@@ -114,6 +114,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             });
             Session::flash("$moved tracks now open " . Stage::STUDIO_PROD_URL . '.');
             Http::redirect('admin.php#tracks');
+        case 'test-mail':
+            $to = (string)($config['ownerEmail'] ?? '');
+            if ($to === '') {
+                Session::flash('Enter your contact address in the Owner panel first, the test mail goes there.');
+            } else {
+                Session::flash(Mailer::test($config, $to)
+                    ? "Your host accepted the test mail to $to. If it does not arrive within a few minutes, look into the spam folder."
+                    : "Your host refused the test mail. Check that the mail sender is an address of your domain, or ask your host whether PHP may send mails.");
+            }
+            Http::redirect('admin.php#settings-mail');
         case 'check-update':
             $latest = Updater::latest();
             if (is_string($latest)) {
@@ -249,6 +259,10 @@ $data['hasFollowers'] = count($followers) > 0;
 $data['followerCount'] = count($followers);
 $data['settingTitle'] = (string)($config['title'] ?? '');
 $data['settingMailFrom'] = (string)($config['mailFrom'] ?? '');
+$mailLog = Files::readJson(Config::dataRoot($config) . '/mail-log.json', null);
+$data['hasMailLog'] = is_array($mailLog);
+$data['mailLog'] = is_array($mailLog) ? sprintf('%s, "%s": %d of %d mails accepted by your host.', date('j M Y, H:i', (int)$mailLog['time']),
+    (string)$mailLog['track'], (int)$mailLog['accepted'], (int)$mailLog['followers']) : '';
 $data['settingOwnerName'] = (string)($config['ownerName'] ?? '');
 $data['settingOwnerAddress'] = (string)($config['ownerAddress'] ?? '');
 $data['settingOwnerEmail'] = (string)($config['ownerEmail'] ?? '');
@@ -256,6 +270,8 @@ $data['ownerMissing'] = $data['settingOwnerName'] === '' || $data['settingOwnerE
 $data['privacyUrl'] = Stage::baseUrl() . 'privacy';
 $data['imprintUrl'] = Stage::baseUrl() . 'imprint';
 $data['authorizedDomain'] = (string)preg_replace(['/:\d+$/', '/^www\./'], '', (string)($_SERVER['HTTP_HOST'] ?? ''));
+$senderDomain = strtolower((string)substr(strrchr(Mailer::sender($config), '@') ?: '', 1));
+$data['senderForeign'] = $senderDomain !== strtolower($data['authorizedDomain']) && !str_ends_with($senderDomain, '.' . strtolower($data['authorizedDomain']));
 $data['mailSender'] = Mailer::sender($config);
 $data['settingGoogleClientId'] = (string)($config['googleClientId'] ?? '');
 $data['googleSecretSet'] = ($config['googleClientSecret'] ?? '') !== '';

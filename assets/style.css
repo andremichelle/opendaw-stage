@@ -823,6 +823,23 @@ input:focus, textarea:focus {
     font-size: 13px;
 }
 
+.warning {
+    margin: 0;
+    padding: 8px 12px;
+    border-left: 3px solid var(--color-orange);
+    background-color: var(--color-panel-dark);
+    color: var(--color-orange);
+    font-size: 13px;
+}
+
+.mail-test {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0 8px;
+}
+
 .settings textarea {
     resize: vertical;
 }

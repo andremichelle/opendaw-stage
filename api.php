@@ -60,7 +60,7 @@ switch ($action) {
                 if (function_exists('fastcgi_finish_request')) {fastcgi_finish_request();}
                 ignore_user_abort(true);
                 set_time_limit(0);
-                Mailer::announce($config, $followers, $track);
+                Files::writeJson(Config::dataRoot($config) . '/mail-log.json', Mailer::announce($config, $followers, $track));
             });
         }
         Http::json(200, ['slug' => $track['slug'], 'url' => Stage::trackUrl($track['slug']), 'updated' => $track['updated'],

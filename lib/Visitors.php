@@ -132,8 +132,7 @@ final class Visitors
             $followers[$record['id']] = $added;
             return $followers;
         });
-        if (!is_null($added) && (int)($record['welcomed'] ?? 0) === 0) {
-            Mailer::welcome($config, $added);
+        if (!is_null($added) && (int)($record['welcomed'] ?? 0) === 0 && Mailer::welcome($config, $added)) {
             $storage->updateUsers(function (array $users) use ($record) {
                 $users[$record['id']]['welcomed'] = time();
                 return $users;
