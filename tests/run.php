@@ -1,5 +1,5 @@
 <?php
-// Runs the site against a fresh copy on php -S. Usage: php tests/run.php
+// Runs the site against a fresh copy of the files git ships (ignored files left out) on php -S. Usage: php tests/run.php
 declare(strict_types=1);
 
 $source = dirname(__DIR__);
@@ -9,12 +9,15 @@ $base = "http://127.0.0.1:$port/";
 $passed = 0;
 $failed = 0;
 
-function copyTree(string $from, string $to): void
+function copyRepository(string $from, string $to): void
 {
-    mkdir($to, 0755, true);
-    foreach (scandir($from) as $name) {
-        if (in_array($name, ['.', '..', '.git', 'tests', 'config.php', 'media'], true) || str_starts_with($name, 'data-')) {continue;}
-        is_dir("$from/$name") ? copyTree("$from/$name", "$to/$name") : copy("$from/$name", "$to/$name");
+    $files = [];
+    exec('git -C ' . escapeshellarg($from) . ' ls-files --cached --others --exclude-standard', $files, $status);
+    if ($status !== 0 || count($files) === 0) {exit("git ls-files failed\n");}
+    foreach ($files as $file) {
+        if (str_starts_with($file, 'tests/') || !is_file("$from/$file")) {continue;}
+        if (!is_dir(dirname("$to/$file"))) {mkdir(dirname("$to/$file"), 0755, true);}
+        copy("$from/$file", "$to/$file");
     }
 }
 
@@ -72,7 +75,7 @@ function uuid(): string
     return substr($hex, 0, 8) . '-' . substr($hex, 8, 4) . '-' . substr($hex, 12, 4) . '-' . substr($hex, 16, 4) . '-' . substr($hex, 20);
 }
 
-copyTree($source, $site);
+copyRepository($source, $site);
 $server = proc_open([PHP_BINARY, '-S', "127.0.0.1:$port", '-t', $site, __DIR__ . '/router.php'], [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
 for ($attempt = 0; $attempt < 50 && @fsockopen('127.0.0.1', $port) === false; $attempt++) {usleep(100_000);}
 

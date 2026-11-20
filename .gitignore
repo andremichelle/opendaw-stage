@@ -1,6 +1,6 @@
-config.php
-data-*/
-media/
+/config.php
+/data-*/
+/media/
+/custom/
 .DS_Store
 .idea/
-custom/
