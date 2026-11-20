@@ -122,7 +122,38 @@ Everything is on `admin.php`:
 4. **Followers:** everyone who gets your mails. **Remove** stops the mails for that person.
 5. **Settings:** title, token from openDAW, admin password, mail sender and Google keys.
 
-## 4. Privacy
+## 4. Updating
+
+### On the admin page
+
+1. Open `admin.php`, section **Updates**, and click **Check for updates**.
+2. When a new version is available, read **What is new** and click **Update to …**.
+3. Your stage downloads the release from GitHub, checks it, keeps a copy of the current files and replaces them.
+   Your tracks, settings and own designs (`config.php`, the `data-…` folder, `media/` and `custom/`) stay as they
+   are. If something fails on the way, the previous files are restored.
+
+An update also replaces the `.htaccess` files that come with your stage. If you added rules of your own there (an
+HTTPS redirect, a password, an address limit), keep them in your host's settings or in the `.htaccess` of the
+folder above your stage instead.
+
+Some releases change more than files. Their release notes say so, and the admin page shows **This update must be
+installed by hand** instead of the button. The page also says so when your host cannot unpack or download files.
+
+### By hand
+
+Only when the admin page asks for it:
+
+1. Download the zip of the [latest release](https://github.com/andremichelle/opendaw-stage/releases/latest)
+   ("Source code (zip)") and unpack it.
+2. Read the release notes and follow any extra steps they name.
+3. Upload the contents of its folder to your stage and replace all files, except these, which hold your data:
+    1. `config.php`
+    2. the `data-…` folder
+    3. `media/`
+    4. `custom/` (your own templates and styles)
+4. Open your stage and the admin page once to check that both load.
+
+## 5. Privacy
 
 Your stage stores the name, profile picture and mail address of everyone who logs in, in the data folder on your
 webspace. Followers' addresses are used only for the mails about new tracks. Mention this in the privacy notice

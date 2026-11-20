@@ -20,3 +20,4 @@ require_once __DIR__ . '/Mailer.php';
 require_once __DIR__ . '/Page.php';
 require_once __DIR__ . '/Visitors.php';
 require_once __DIR__ . '/Lockout.php';
+require_once __DIR__ . '/Updater.php';

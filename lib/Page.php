@@ -53,8 +53,8 @@ final class Page
             'updatedDate' => date('j M Y', (int)$track['updated']),
             'wasUpdated' => $track['updated'] - $track['created'] > 60,
             'bpm' => is_null($track['bpm']) ? '' : (string)round((float)$track['bpm'], 2),
-            'tags' => array_map(fn(string $tag) => ['tag' => $tag], $track['tags']),
-            'hasTags' => count($track['tags']) > 0,
+            'tags' => array_map(fn(string $tag) => ['tag' => $tag], self::tags($track)),
+            'hasTags' => count(self::tags($track)) > 0,
             'likes' => count($likes),
             'liked' => !is_null($user) && in_array($user['id'], $likes, true),
             'commentCount' => count($comments),
@@ -69,6 +69,11 @@ final class Page
             'mixdownFileName' => $track['slug'] . '.opus',
             'hidden' => $track['hidden']
         ];
+    }
+
+    public static function tags(array $track): array
+    {
+        return array_values(array_filter(array_map('trim', $track['tags']), fn(string $tag) => $tag !== ''));
     }
 
     public static function studio(array $track): string

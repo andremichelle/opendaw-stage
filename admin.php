@@ -114,6 +114,39 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             });
             Session::flash("$moved tracks now open " . Stage::STUDIO_PROD_URL . '.');
             Http::redirect('admin.php#tracks');
+        case 'check-update':
+            $latest = Updater::latest();
+            if (is_null($latest)) {
+                Session::flash('Could not ask GitHub for the latest release. Please try again later.');
+            } else {
+                Files::writeJson(Config::dataRoot($config) . '/update.json', $latest + ['checked' => time()]);
+                Session::flash(Updater::isNewer($latest, Stage::root()) ? "Version {$latest['version']} is available." : 'Your stage is up to date.');
+            }
+            Http::redirect('admin.php#updates');
+        case 'update':
+            $latest = Files::readJson(Config::dataRoot($config) . '/update.json', null);
+            $error = match (true) {
+                !is_array($latest) || !isset($latest['sha']) || !Updater::isNewer($latest, Stage::root()) => 'There is no newer version. Check for updates first.',
+                !Updater::isAutomatic($latest, Stage::root()) => 'This release must be installed by hand.',
+                Updater::missingRequirement(Stage::root()) !== '' => Updater::missingRequirement(Stage::root()),
+                default => ''
+            };
+            if ($error === '') {
+                $error = Files::withLock(Config::dataRoot($config) . '/.update.lock', function () use ($config, $latest) {
+                    set_time_limit(300);
+                    ignore_user_abort(true);
+                    $work = Config::dataRoot($config) . '/updates/' . bin2hex(random_bytes(8));
+                    if (!Files::ensureDir($work)) {return 'Could not create the update folder.';}
+                    $archive = $work . '/release.tar.gz';
+                    $error = Updater::download($latest['sha'], $archive)
+                        ? Updater::install($archive, $latest['version'], Stage::root(), $work) : 'Could not download the release from GitHub.';
+                    if (!is_file($work . '/installing.json')) {Files::removeTree($work);}
+                    return $error;
+                });
+            }
+            if ($error === '') {unlink(Config::dataRoot($config) . '/update.json');}
+            Session::flash($error === '' ? "Your stage is updated to version {$latest['version']}." : $error);
+            Http::redirect('admin.php#updates');
         case 'settings':
             $title = Http::post('title');
             $token = Http::post('token');
@@ -154,6 +187,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 
 $data = Page::common($config, $storage, '');
 if (!Session::isAdmin()) {Http::html(Template::render('admin-login', $data));}
+$recovered = Files::withLock(Config::dataRoot($config) . '/.update.lock',
+    fn() => Updater::recover(Stage::root(), Config::dataRoot($config) . '/updates'));
+if ($recovered !== '') {$data['flash'] = $recovered;}
 $tracks = $storage->tracks();
 $pending = [];
 $approved = [];
@@ -192,6 +228,15 @@ $data['mailSender'] = Mailer::sender($config);
 $data['settingGoogleClientId'] = (string)($config['googleClientId'] ?? '');
 $data['googleSecretSet'] = ($config['googleClientSecret'] ?? '') !== '';
 $data['redirectUrl'] = Google::redirectUrl();
+$latest = Files::readJson(Config::dataRoot($config) . '/update.json', null);
+$data['version'] = Updater::current(Stage::root())['version'];
+$data['updateKnown'] = is_array($latest) && Updater::isNewer($latest, Stage::root());
+$data['updateVersion'] = $data['updateKnown'] ? $latest['version'] : '';
+$data['updateUrl'] = $data['updateKnown'] ? $latest['url'] : '';
+$data['updateRequirement'] = Updater::missingRequirement(Stage::root());
+$data['updateAutomatic'] = $data['updateKnown'] && Updater::isAutomatic($latest, Stage::root()) && $data['updateRequirement'] === '';
+$data['updateManual'] = $data['updateKnown'] && !$data['updateAutomatic'];
+$data['manualUpdate'] = Stage::MANUAL_URL . '#4-updating';
 $data['manualMail'] = Stage::MANUAL_URL . '#2-mails-to-followers';
 $data['manualGoogle'] = Stage::MANUAL_URL . '#1-google-login';
 $data['devCount'] = count(array_filter($tracks, fn(array $track) => Page::studio($track) === Stage::STUDIO_DEV_URL));

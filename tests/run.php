@@ -411,6 +411,73 @@ request('POST', 'admin.php', ['Content-Type' => 'application/x-www-form-urlencod
 $locked = request('GET', 'admin.php', [], '', $intruder)['body'];
 check('five wrong passwords lock the login', str_contains($locked, 'Too many wrong passwords') && !str_contains($locked, 'id="settings"'));
 
+echo "Updater\n";
+require_once "$site/lib/bootstrap.php";
+require_once __DIR__ . '/../tools/Manifest.php';
+$shipped = json_decode(file_get_contents("$source/release.json"), true);
+check('release.json lists exactly the shipped files', ($shipped['files'] ?? null) === Manifest::shippedFiles($source));
+$fakeRelease = static function (string $version, string $from, array $files, ?array $listed = null): string {
+    $work = sys_get_temp_dir() . '/stage-release-' . bin2hex(random_bytes(4));
+    $top = "opendaw-stage-$version";
+    $files['release.json'] = json_encode(['version' => $version, 'autoUpdateFrom' => $from,
+        'files' => $listed ?? array_merge(array_keys($files), ['release.json'])]);
+    foreach ($files as $file => $content) {
+        if (!is_dir(dirname("$work/$top/$file"))) {mkdir(dirname("$work/$top/$file"), 0755, true);}
+        file_put_contents("$work/$top/$file", $content);
+    }
+    file_put_contents("$work/pax_global_header", 'comment');
+    exec('tar -czf ' . escapeshellarg("$work/release.tar.gz") . ' -C ' . escapeshellarg($work) . ' pax_global_header ' . escapeshellarg($top));
+    return "$work/release.tar.gz";
+};
+$work = static fn() => sys_get_temp_dir() . '/stage-work-' . bin2hex(random_bytes(4));
+$current = Updater::current($site);
+$base = [];
+foreach ($current['files'] as $file) {
+    if ($file !== 'release.json') {$base[$file] = file_get_contents("$site/$file");}
+}
+$configBefore = file_get_contents("$site/config.php");
+$tracksBefore = file_get_contents("$data/index.json");
+$refused = static fn(array $listed, string $from = '1.1.0') => Updater::install($fakeRelease('9.9.9', $from, $base, $listed), '9.9.9', $site, $work());
+check('update refuses config.php', $refused(['config.php', 'release.json']) === 'The release lists a file it may not replace.');
+check('update refuses traversal', $refused(['lib/../config.php', 'release.json']) === 'The release lists a file it may not replace.');
+check('update refuses media, custom and data', $refused(['media/x.php', 'release.json']) === 'The release lists a file it may not replace.'
+    && $refused(['custom/style.css', 'release.json']) === 'The release lists a file it may not replace.' && $refused(['data-x/a', 'release.json']) === 'The release lists a file it may not replace.');
+check('update refuses dot files', $refused(['.env', 'release.json']) === 'The release lists a file it may not replace.' && $refused(['lib/.hidden.php', 'release.json']) === 'The release lists a file it may not replace.');
+check('update refuses upper case protected paths', $refused(['CONFIG.PHP', 'release.json']) === 'The release lists a file it may not replace.'
+    && $refused(['Media/x.php', 'release.json']) === 'The release lists a file it may not replace.' && $refused(['DATA-x/a', 'release.json']) === 'The release lists a file it may not replace.');
+check('update refuses a list without release.json', $refused(array_keys($base)) === 'The release has no valid release.json.');
+check('update refuses a version other than the checked one', Updater::install($fakeRelease('9.9.9', '1.1.0', $base), '9.9.8', $site, $work()) === 'The release does not match the version that was checked.');
+check('update refuses an older or same version', Updater::install($fakeRelease('1.1.0', '1.0.0', $base), '1.1.0', $site, $work()) === 'This version is already installed.');
+check('update refuses a manual release', Updater::install($fakeRelease('9.9.9', '9.0.0', $base), '9.9.9', $site, $work()) === 'This release must be installed by hand.');
+check('update refuses a missing file', str_starts_with(Updater::install($fakeRelease('9.9.9', '1.1.0', $base, array_merge(array_keys($base), ['lib/Gone.php', 'release.json'])), '9.9.9', $site, $work()), 'The archive'));
+check('refused updates change nothing', file_get_contents("$site/index.php") === $base['index.php'] && Updater::current($site)['version'] === $current['version']);
+$broken = $base;
+$broken['index.php'] = '<?php echo "broken";';
+$broken['locked/x.txt'] = 'x';
+mkdir("$site/locked", 0555);
+check('failed write restores the previous files', str_contains(Updater::install($fakeRelease('9.9.9', '1.1.0', $broken), '9.9.9', $site, $work()), 'previous version was restored')
+    && file_get_contents("$site/index.php") === $base['index.php'] && Updater::current($site)['version'] === $current['version']);
+chmod("$site/locked", 0755);
+$interrupted = sys_get_temp_dir() . '/stage-updates-' . bin2hex(random_bytes(4));
+mkdir("$interrupted/a/backup", 0755, true);
+copy("$site/index.php", "$interrupted/a/backup/index.php");
+file_put_contents("$interrupted/a/installing.json", json_encode(['existed' => ['index.php'], 'written' => ['index.php', 'lib/Half.php']]));
+file_put_contents("$site/index.php", '<?php echo "half";');
+file_put_contents("$site/lib/Half.php", '<?php');
+check('interrupted update is undone', Updater::recover($site, $interrupted) === 'An update was interrupted, the previous version was restored.'
+    && file_get_contents("$site/index.php") === $base['index.php'] && !is_file("$site/lib/Half.php") && !is_dir("$interrupted/a"));
+check('nothing to recover says nothing', Updater::recover($site, $interrupted) === '');
+$next = $base;
+$next['index.php'] = $base['index.php'] . "\n// 9.9.9\n";
+$next['lib/New.php'] = '<?php';
+unset($next['oauth.php']);
+check('update installs', Updater::install($fakeRelease('9.9.9', '1.1.0', $next), '9.9.9', $site, $work()) === '');
+check('update replaces and adds files', str_ends_with(file_get_contents("$site/index.php"), "// 9.9.9\n") && is_file("$site/lib/New.php"));
+check('update removes files the release dropped', !is_file("$site/oauth.php"));
+check('update keeps config and data', file_get_contents("$site/config.php") === $configBefore && file_get_contents("$data/index.json") === $tracksBefore && is_dir("$site/media"));
+check('update records the new version', Updater::current($site)['version'] === '9.9.9');
+check('updated site still answers', request('GET', '')['status'] === 200);
+
 proc_terminate($server);
 proc_close($server);
 removeTree($site);

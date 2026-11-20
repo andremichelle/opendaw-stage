@@ -15,6 +15,7 @@
             <a href="#comments">Comments<!-- if:pendingCount --> <span class="badge">{{pendingCount}}</span><!-- end:pendingCount --></a>
             <a href="#users">Users</a>
             <a href="#followers">Followers <span class="count">{{followerCount}}</span></a>
+            <a href="#updates">Updates<!-- if:updateKnown --> <span class="badge">{{updateVersion}}</span><!-- end:updateKnown --></a>
             <a href="#settings">Settings</a>
         </nav>
         <form method="post" action="admin.php">
@@ -136,6 +137,29 @@
             </li>
             <!-- end:followers -->
         </ul>
+    </section>
+
+    <section id="updates" class="panel">
+        <h2>Updates</h2>
+        <div class="studio-target">
+            <span>This stage runs version {{version}}.</span>
+            <!-- if:updateKnown -->
+            <span>Version {{updateVersion}} is available. <a href="{{updateUrl}}" target="_blank" rel="noopener">What is new</a></span>
+            <!-- end:updateKnown -->
+            <!-- if:updateAutomatic -->
+            <form method="post" action="admin.php">
+                <input type="hidden" name="csrf" value="{{csrf}}">
+                <button class="button primary" name="do" value="update" data-confirm="Update your stage to version {{updateVersion}}? Your tracks, settings and own designs stay as they are.">Update to {{updateVersion}}</button>
+            </form>
+            <!-- end:updateAutomatic -->
+            <!-- if:updateManual -->
+            <span>This update must be installed by hand. <!-- if:updateRequirement -->{{updateRequirement}} <!-- end:updateRequirement --><a href="{{manualUpdate}}" target="_blank" rel="noopener">How to update by hand</a></span>
+            <!-- end:updateManual -->
+            <form method="post" action="admin.php">
+                <input type="hidden" name="csrf" value="{{csrf}}">
+                <button class="button" name="do" value="check-update">Check for updates</button>
+            </form>
+        </div>
     </section>
 
     <section id="settings" class="panel">

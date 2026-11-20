@@ -78,8 +78,13 @@ The colours are CSS variables at the top of `style.css` (`--color-accent`, `--wa
 
 ## Updating
 
-Download the zip of the [latest release](https://github.com/andremichelle/opendaw-stage/releases/latest) and
-replace all files except `config.php`, the `data-…` folder, `media/` and `custom/`. Nothing else holds your data.
+On the admin page, section **Updates**: **Check for updates**, then **Update to …**. Releases that need more than
+new files say so and are installed by hand, see [MANUAL.md](MANUAL.md#4-updating). Nothing outside `config.php`,
+the `data-…` folder, `media/` and `custom/` holds your data.
+
+Every release carries `release.json` with its version, its file list and the oldest version that may update to it
+automatically (`autoUpdateFrom`). It is written with `php tools/release.php <version> <autoUpdateFrom>` before the
+release is tagged, and `tests/run.php` fails when it does not match the shipped files.
 
 ## Backup
 
