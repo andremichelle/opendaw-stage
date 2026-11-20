@@ -41,13 +41,17 @@ Followers get a welcome mail and a mail for every new track you publish (not for
 Everything is on `admin.php`:
 
 1. **Tracks:** hide a track (it disappears for visitors and its files move to a hidden folder, you still see
-   it), show it again, or delete it with its likes and comments.
+   it), show it again, or delete it with its likes and comments. **Feature** puts one track above all others,
+   **Unfeature** takes it back.
 2. **Comments:** new comments wait under **Waiting for approval**. Approve or delete them. Approved comments
    can be deleted any time.
 3. **Users:** everyone who logged in. **Block** removes their likes, comments and follow and stops them from
    liking, commenting and following again.
 4. **Followers:** everyone who gets your mails. **Remove** stops the mails for that person.
-5. **Settings:** title, token from openDAW, admin password, mail sender and Google keys.
+5. **Profile:** a cover image across the top, a profile picture, a short text about you and your links, one
+   per line with a name and the address (`Bandcamp https://you.bandcamp.com`). The admin page crops the images
+   to 2400 × 600 and 400 × 400 pixels before the upload. Empty parts are left out of the page.
+6. **Settings:** title, token from openDAW, admin password, mail sender and Google keys.
 
 ## 4. Updating
 

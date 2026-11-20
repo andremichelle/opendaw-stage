@@ -24,6 +24,11 @@ $data['previousUrl'] = is_null($previous) ? '' : Stage::trackPath($previous['slu
 $data['hasNext'] = !is_null($next);
 $data['nextTitle'] = $next['title'] ?? '';
 $data['nextUrl'] = is_null($next) ? '' : Stage::trackPath($next['slug']);
+$tags = Page::tags($track);
+$related = array_values(array_filter($visible, fn(array $item) => $item['uuid'] !== $track['uuid']
+    && count(array_intersect(Page::tags($item), $tags)) > 0));
+$data['related'] = array_map(fn(array $item) => Page::track($item, $storage), array_slice($related, 0, 5));
+$data['hasRelated'] = count($data['related']) > 0;
 $data['comments'] = Page::comments($track, $storage);
 $data['hasComments'] = count($data['comments']) > 0;
 Http::html(Template::render('track', $data));

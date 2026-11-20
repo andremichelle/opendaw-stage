@@ -283,7 +283,7 @@ $legacy = request('GET', 'index.php');
 check('index.php redirects to the root', $legacy['status'] === 301 && ($legacy['headers']['location'] ?? '') === './');
 check('no index.php links left', !str_contains($list['body'], 'index.php'));
 check('list renders', $list['status'] === 200 && str_contains($list['body'], 'Night Drive Remastered') && str_contains($list['body'], 'Open Me'));
-check('list has no leftover template tags', !str_contains($list['body'], '{{') && !str_contains($list['body'], '<!-- if:') && !str_contains($list['body'], '<!-- each:'));
+check('list has no leftover template tags', !str_contains($list['body'], '{{') && !str_contains($list['body'], '<!-- if:') && !str_contains($list['body'], '<!-- each:') && !str_contains($list['body'], '<!-- include:'));
 check('list sends no-cache and an ETag', ($list['headers']['cache-control'] ?? '') === 'no-cache, private' && ($list['headers']['etag'] ?? '') !== '');
 check('unchanged list answers 304', request('GET', '', ['If-None-Match' => $list['headers']['etag'] ?? ''], '', $visitor)['status'] === 304);
 preg_match('/name="csrf" content="([0-9a-f]+)"/', $list['body'], $csrfMatch);
@@ -451,6 +451,65 @@ check('other sections keep their values', str_contains(request('GET', 'admin.php
 $adminPost(['do' => 'settings', 'section' => 'stage', 'title' => '']);
 check('empty title refused', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'Please enter a title'));
 check('settings rename the stage', str_contains(request('GET', '')['body'], 'Renamed Stage'));
+
+echo "Profile\n";
+$listBody = request('GET', '')['body'];
+$cardCount = substr_count($listBody, '<article class="card"');
+check('list without profile shows no cover, picture, bio, links or featured track', !str_contains($listBody, 'hero-cover')
+    && !str_contains($listBody, 'profile-image') && !str_contains($listBody, 'class="bio"') && !str_contains($listBody, 'class="links"')
+    && !str_contains($listBody, 'class="featured"'));
+check('tag filter shows when tracks have two tags or more', str_contains($listBody, 'data-tag-filter="synth"') && str_contains($listBody, 'data-tag-filter="night"'));
+check('search shows from six tracks on', str_contains($listBody, 'data-search') === ($cardCount >= 6));
+check('sort by likes shows once a track has a like', str_contains($listBody, 'data-sort="likes"'));
+file_put_contents("$data/tracks/$withProject/likes.json", '[]');
+check('sort by likes hidden without likes', !str_contains(request('GET', '')['body'], 'data-sort='));
+check('track page has no play counts', !str_contains(request('GET', 'open-me')['body'], 'Plays'));
+$adminPost(['do' => 'settings', 'section' => 'profile', 'bio' => "Techno <b>from</b>\nBerlin", 'links' => "Bandcamp https://ana.bandcamp.com\nhttps://mastodon.social/@ana\nMy site https://example.com/x?a=1&b=<2>"]);
+$listBody = request('GET', '')['body'];
+check('bio shows escaped', str_contains($listBody, 'Techno &lt;b&gt;from&lt;/b&gt;'));
+check('links show with their icon', str_contains($listBody, 'href="https://ana.bandcamp.com"') && str_contains($listBody, '#icon-bandcamp')
+    && str_contains($listBody, '#icon-mastodon') && str_contains($listBody, 'mastodon.social') && str_contains($listBody, '#icon-web'));
+check('link addresses are escaped', str_contains($listBody, 'a=1&amp;b=&lt;2&gt;'));
+$adminPost(['do' => 'settings', 'section' => 'profile', 'bio' => 'x', 'links' => "Broken link\njavascript:alert(1)"]);
+check('links without an address refused', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'Every link needs its own line')
+    && str_contains(request('GET', '')['body'], 'Techno &lt;b&gt;from'));
+$adminPost(['do' => 'settings', 'section' => 'profile', 'bio' => '', 'links' => implode("\n", array_fill(0, 13, 'https://example.com'))]);
+check('too many links refused', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'Every link needs its own line'));
+$adminPost(['do' => 'feature', 'track' => $withProject]);
+$listBody = request('GET', '')['body'];
+check('featured track shows above the tracks', str_contains($listBody, 'class="featured"') && preg_match('#class="featured".*?Open Me.*?id="tracks"#s', $listBody) === 1);
+check('admin marks the featured track', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], '>Unfeature<'));
+$adminPost(['do' => 'feature', 'track' => $withProject]);
+check('feature again removes it', !str_contains(request('GET', '')['body'], 'class="featured"'));
+$png = static function (int $width, int $height): string {
+    $header = pack('NN', $width, $height) . "\x08\x06\x00\x00\x00";
+    return "\x89PNG\r\n\x1A\n" . pack('N', 13) . 'IHDR' . $header . pack('N', crc32('IHDR' . $header)) . str_repeat("\0", 64);
+};
+$imagePost = static function (string $kind, string $bytes, string $do = 'image') use (&$admin, $adminCsrf): array {
+    $boundary = bin2hex(random_bytes(8));
+    $body = '';
+    foreach (['csrf' => $adminCsrf, 'do' => $do, 'kind' => $kind] as $name => $value) {
+        $body .= "--$boundary\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n";
+    }
+    $body .= "--$boundary\r\nContent-Disposition: form-data; name=\"image\"; filename=\"image.png\"\r\nContent-Type: image/png\r\n\r\n$bytes\r\n--$boundary--\r\n";
+    return request('POST', 'admin.php', ['Content-Type' => "multipart/form-data; boundary=$boundary"], $body, $admin);
+};
+$imagePost('avatar', $png(400, 400));
+$listBody = request('GET', '')['body'];
+check('uploaded profile picture shows', is_file("$site/media/_stage/avatar.png") && preg_match('#class="profile-image" src="media/_stage/avatar\.png\?v=\d+"#', $listBody) === 1);
+check('profile picture shows on the track page', str_contains(request('GET', 'open-me')['body'], 'src="media/_stage/avatar.png?v='));
+$imagePost('cover', $png(2400, 600));
+check('uploaded cover shows', is_file("$site/media/_stage/cover.png") && str_contains(request('GET', '')['body'], 'class="hero-cover"><img src="media/_stage/cover.png?v='));
+$imagePost('cover', $png(20000, 600));
+check('oversized cover refused', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'The image is too large'));
+$imagePost('avatar', '<?php echo 1;');
+check('script as image refused', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'must be a JPEG, PNG or WebP') && !is_file("$site/media/_stage/avatar.php"));
+$imagePost('../config', $png(10, 10));
+check('unknown image kind ignored', !is_file("$site/media/config.png") && !is_file("$site/media/_stage/../config.png"));
+$imagePost('cover', '', 'remove-image');
+clearstatcache();
+check('removed cover is gone', !is_file("$site/media/_stage/cover.png") && !str_contains(request('GET', '')['body'], 'hero-cover'));
+$imagePost('avatar', '', 'remove-image');
 check('old token stops working', request('GET', 'api.php?action=alive', $auth)['status'] === 401);
 check('new token works', request('GET', 'api.php?action=alive', ['X-OpenDAW-Token' => $newToken])['status'] === 200);
 $auth = ['X-OpenDAW-Token' => $newToken];

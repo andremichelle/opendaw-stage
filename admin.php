@@ -58,6 +58,26 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             });
             Session::flash($do === 'hide' ? 'The track is hidden.' : 'The track is visible again.');
             Http::redirect('admin.php#tracks');
+        case 'feature':
+            $track = $trackOf($uuid);
+            $config['featured'] = ($config['featured'] ?? '') === $track['uuid'] ? '' : $track['uuid'];
+            Session::flash(!Config::save($config) ? 'Could not write config.php.'
+                : ($config['featured'] === '' ? 'No track is featured.' : 'The track is featured.'));
+            Http::redirect('admin.php#tracks');
+        case 'image':
+        case 'remove-image':
+            $kind = Http::post('kind');
+            if (!isset(Profile::IMAGES[$kind])) {Http::redirect('admin.php#settings-profile');}
+            $error = '';
+            if ($do === 'image') {
+                $file = $_FILES['image'] ?? null;
+                $error = is_array($file) ? Profile::storeImage($config, $kind, $file) : 'Please choose an image.';
+            } else {
+                Profile::removeImage($config, $kind);
+            }
+            if ($error === '' && !Config::save($config)) {$error = 'Could not write config.php.';}
+            Session::flash($error === '' ? ($do === 'image' ? 'The image is saved.' : 'The image is removed.') : $error);
+            Http::redirect('admin.php#settings-profile');
         case 'delete-track':
             $storage->transaction(function () use ($storage, $trackOf, $uuid) {
                 $track = $trackOf($uuid);
@@ -154,6 +174,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $ownerAddress = str_replace("\r\n", "\n", Http::post('ownerAddress'));
             $error = match ($section) {
                 'stage' => Http::post('title') === '' || strlen(Http::post('title')) > 200 ? 'Please enter a title for your stage.' : '',
+                'profile' => match (true) {
+                    strlen(Http::post('bio')) > Profile::MAX_BIO => 'The text about you is too long.',
+                    is_null(Profile::parseLinks(Http::post('links'))) => 'Every link needs its own line with a name and an address starting with https://, at most ' . Profile::MAX_LINKS . ' links.',
+                    default => ''
+                },
                 'access' => match (true) {
                     $token === '' && $password === '' => 'Enter a new token or a new password.',
                     $token !== '' && preg_match('/^[A-Za-z0-9_-]{32,128}$/D', $token) !== 1 => 'The token is not valid. Copy it again from openDAW.',
@@ -181,6 +206,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             switch ($section) {
                 case 'stage':
                     $config['title'] = Http::post('title');
+                    break;
+                case 'profile':
+                    $config['bio'] = str_replace("\r\n", "\n", Http::post('bio'));
+                    $config['links'] = Profile::parseLinks(Http::post('links'));
                     break;
                 case 'access':
                     if ($token !== '') {$config['tokenHash'] = hash('sha256', $token);}
@@ -244,7 +273,8 @@ $byTime = fn(array $a, array $b) => $b['sort'] <=> $a['sort'];
 usort($pending, $byTime);
 usort($approved, $byTime);
 $followers = $storage->followers();
-$data['tracks'] = array_map(fn(array $track) => Page::track($track, $storage), $tracks);
+$data['tracks'] = array_map(fn(array $track) => Page::track($track, $storage)
+    + ['featured' => $track['uuid'] === ($config['featured'] ?? '')], $tracks);
 $data['hasTracks'] = count($tracks) > 0;
 $data['pending'] = $pending;
 $data['hasPending'] = count($pending) > 0;
@@ -260,6 +290,13 @@ $data['followers'] = array_values(array_map(fn(array $follower) => ['followerId'
 $data['hasFollowers'] = count($followers) > 0;
 $data['followerCount'] = count($followers);
 $data['settingTitle'] = (string)($config['title'] ?? '');
+$data['settingBio'] = (string)($config['bio'] ?? '');
+$data['settingLinks'] = Profile::linksText($config);
+$data['maxLinks'] = Profile::MAX_LINKS;
+$data['maxBio'] = Profile::MAX_BIO;
+$data['images'] = array_map(fn(string $kind, array $size) => ['kind' => $kind, 'imageUrl' => Profile::imageUrl($config, $kind),
+    'imageLabel' => $kind === 'cover' ? 'Cover image' : 'Profile picture', 'imageWidth' => $size[0], 'imageHeight' => $size[1],
+    'imageRound' => $kind === 'avatar'], array_keys(Profile::IMAGES), array_values(Profile::IMAGES));
 $data['settingMailFrom'] = (string)($config['mailFrom'] ?? '');
 $mailLog = Files::readJson(Config::dataRoot($config) . '/mail-log.json', null);
 $data['hasMailLog'] = is_array($mailLog);

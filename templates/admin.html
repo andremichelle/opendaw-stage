@@ -16,6 +16,7 @@
             <a href="#users">Users</a>
             <a href="#followers">Followers <span class="count">{{followerCount}}</span></a>
             <a href="#updates">Updates<!-- if:updateKnown --> <span class="badge">{{updateVersion}}</span><!-- end:updateKnown --></a>
+            <a href="#settings-profile">Profile</a>
             <a href="#settings-stage">Settings</a>
         </nav>
         <form method="post" action="admin.php">
@@ -43,12 +44,13 @@
                 <img class="thumb" src="{{cover}}" alt="" loading="lazy" width="48" height="48">
                 <div class="grow">
                     <a href="{{url}}">{{title}}</a>
-                    <span class="sub">{{artist}} · {{date}} · {{likes}} likes · {{commentCount}} comments<!-- if:hasProject --> · opens {{studio}}<!-- end:hasProject --><!-- if:hidden --> · hidden<!-- end:hidden --></span>
+                    <span class="sub">{{artist}} · {{date}} · {{likes}} likes · {{commentCount}} comments<!-- if:hasProject --> · opens {{studio}}<!-- end:hasProject --><!-- if:hidden --> · hidden<!-- end:hidden --><!-- if:featured --> · featured<!-- end:featured --></span>
                 </div>
                 <form method="post" action="admin.php">
                     <input type="hidden" name="csrf" value="{{csrf}}">
                     <input type="hidden" name="track" value="{{uuid}}">
                     <!-- if:hidden --><button class="button" name="do" value="show">Show</button><!-- end:hidden -->
+                    <!-- if:!hidden --><button class="button" name="do" value="feature"><!-- if:featured -->Unfeature<!-- end:featured --><!-- if:!featured -->Feature<!-- end:!featured --></button><!-- end:!hidden -->
                     <!-- if:!hidden --><button class="button" name="do" value="hide">Hide</button><!-- end:!hidden -->
                     <button class="button danger" name="do" value="delete-track" data-confirm="Delete {{title}} with its likes and comments? This cannot be undone.">Delete</button>
                 </form>
@@ -170,6 +172,37 @@
             <input type="hidden" name="do" value="settings">
             <input type="hidden" name="section" value="stage">
             <label>Title<input type="text" name="title" value="{{settingTitle}}" maxlength="200" required></label>
+            <button class="button primary" type="submit">Save</button>
+        </form>
+    </section>
+
+    <section id="settings-profile" class="panel">
+        <h2>Profile</h2>
+        <p class="hint">Shown above your tracks. Everything here is optional, empty parts are left out.</p>
+        <div class="images">
+            <!-- each:images -->
+            <form method="post" action="admin.php" enctype="multipart/form-data" class="image-form" data-image-form data-width="{{imageWidth}}" data-height="{{imageHeight}}">
+                <input type="hidden" name="csrf" value="{{csrf}}">
+                <input type="hidden" name="kind" value="{{kind}}">
+                <span class="label">{{imageLabel}}</span>
+                <div class="preview preview-{{kind}}"><!-- if:imageUrl --><img src="{{imageUrl}}" alt=""><!-- end:imageUrl --></div>
+                <input class="zoom" type="range" min="1" max="4" step="0.01" value="1" disabled data-image-zoom aria-label="Zoom">
+                <span class="hint">Drag the image to place it, the slider zooms. Saved at {{imageWidth}} × {{imageHeight}} pixels.</span>
+                <div class="row">
+                    <label class="button">Choose image<input class="hidden" type="file" name="image" accept="image/jpeg,image/png,image/webp" data-image-input></label>
+                    <button class="button primary" name="do" value="image">Upload</button>
+                    <!-- if:imageUrl --><button class="button danger" name="do" value="remove-image" formnovalidate>Remove</button><!-- end:imageUrl -->
+                </div>
+            </form>
+            <!-- end:images -->
+        </div>
+        <form method="post" action="admin.php" class="settings">
+            <input type="hidden" name="csrf" value="{{csrf}}">
+            <input type="hidden" name="do" value="settings">
+            <input type="hidden" name="section" value="profile">
+            <label>About you<textarea name="bio" rows="3" maxlength="{{maxBio}}">{{settingBio}}</textarea></label>
+            <label>Links, one per line: name and address<textarea name="links" rows="5" placeholder="Bandcamp https://you.bandcamp.com">{{settingLinks}}</textarea></label>
+            <p class="hint">At most {{maxLinks}} links. Bandcamp, SoundCloud, Instagram, YouTube, Bluesky, Mastodon and others get their icon.</p>
             <button class="button primary" type="submit">Save</button>
         </form>
     </section>

@@ -1,5 +1,5 @@
 {
-    "version": "0.0.15",
+    "version": "0.0.16",
     "autoUpdateFrom": "0.0.1",
     "files": [
         ".htaccess",
@@ -23,6 +23,7 @@
         "lib/Mailer.php",
         "lib/Media.php",
         "lib/Page.php",
+        "lib/Profile.php",
         "lib/Publisher.php",
         "lib/Session.php",
         "lib/Stage.php",
@@ -45,6 +46,7 @@
         "templates/list.html",
         "templates/message.html",
         "templates/privacy.html",
+        "templates/sprite.html",
         "templates/track.html",
         "track.php"
     ]

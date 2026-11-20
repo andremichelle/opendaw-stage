@@ -23,8 +23,10 @@ final class Template
 
     public static function apply(string $source, array $data): string
     {
-        $source = (string)preg_replace_callback('/<!-- include:([a-z-]+) -->/',
-            fn(array $match) => (string)file_get_contents(self::file($match[1] . '.html')), $source);
+        for ($depth = 0; $depth < 4 && str_contains($source, '<!-- include:'); $depth++) {
+            $source = (string)preg_replace_callback('/<!-- include:([a-z-]+) -->/',
+                fn(array $match) => (string)file_get_contents(self::file($match[1] . '.html')), $source);
+        }
         $source = (string)preg_replace_callback('/<!-- each:(\w+) -->(.*?)<!-- end:\1 -->/s', function (array $match) use ($data) {
             $items = $data[$match[1]] ?? [];
             if (!is_array($items)) {return '';}

@@ -10,39 +10,78 @@
 </head>
 <body class="page-list">
 <!-- include:header -->
-<main class="content">
-    <!-- if:empty --><p class="empty">No tracks yet.</p><!-- end:empty -->
-    <ol class="track-list">
-        <!-- each:tracks -->
-        <li class="track-row" data-player data-src="{{mixdown}}" data-peaks="{{peaks}}" data-duration="{{seconds}}">
-            <a class="cover" href="{{url}}"><img class="glow" src="{{cover}}" alt="" loading="lazy"><img src="{{cover}}" alt="Cover of {{title}}" loading="lazy" width="160" height="160"></a>
-            <div class="heading">
+<main class="content list" data-page>
+    <!-- if:cover --><div class="hero-cover"><img src="{{cover}}" alt=""></div><!-- end:cover -->
+    <section class="profile<!-- if:!avatar --> no-avatar<!-- end:!avatar -->">
+        <!-- if:avatar --><img class="profile-image" src="{{avatar}}" alt="{{siteTitle}}" width="72" height="72"><!-- end:avatar -->
+        <div class="profile-text">
+            <h1>{{siteTitle}}</h1>
+            <!-- if:bio --><p class="bio">{{bio}}</p><!-- end:bio -->
+            <p class="stats mono"><span>{{trackCount}} <!-- if:many -->tracks<!-- end:many --><!-- if:!many -->track<!-- end:!many --></span><!-- if:hasFollowers --><span>{{followerCount}} followers</span><!-- end:hasFollowers --></p>
+        </div>
+        <button class="button icon" type="button" data-share-site data-title="{{siteTitle}}" data-url="{{baseUrl}}" aria-label="Share this stage"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-share"/></svg></button>
+    </section>
+    <!-- if:hasLinks -->
+    <nav class="links">
+        <!-- each:links --><a href="{{linkUrl}}" target="_blank" rel="noopener me"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-{{linkIcon}}"/></svg>{{linkLabel}}<span class="arrow">↗</span></a><!-- end:links -->
+    </nav>
+    <!-- end:hasLinks -->
+    <!-- if:hasFeatured -->
+    <!-- each:featured -->
+    <section class="featured" data-track data-uuid="{{uuid}}" data-src="{{mixdown}}" data-peaks="{{peaks}}" data-duration="{{seconds}}"
+             data-title="{{title}}" data-artist="{{artist}}" data-cover="{{cover}}" data-url="{{url}}" data-share-url="{{absoluteUrl}}">
+        <a class="cover" href="{{url}}"><img src="{{cover}}" alt="Cover of {{title}}" width="200" height="200"></a>
+        <div class="body">
+            <span class="mono label">Featured</span>
+            <h2><a href="{{url}}">{{title}}</a></h2>
+            <!-- if:hasDescription --><p class="description">{{shortDescription}}</p><!-- end:hasDescription -->
+            <span class="mono">{{date}}<!-- if:bpm --> · {{bpm}} BPM<!-- end:bpm --></span>
+            <div class="player-row">
                 <button class="play" type="button" data-play aria-label="Play {{title}}"><!-- include:icons --></button>
-                <div class="names">
-                    <a class="title" href="{{url}}">{{title}}</a>
-                    <span class="artist">{{artist}}</span>
+                <div class="waveform" data-waveform><canvas></canvas></div>
+                <span class="mono" data-position data-total="{{duration}}">{{duration}}</span>
+            </div>
+        </div>
+    </section>
+    <!-- end:featured -->
+    <!-- end:hasFeatured -->
+    <section class="tracks" id="tracks">
+        <!-- if:empty --><p class="empty">No tracks yet.</p><!-- end:empty -->
+        <!-- if:!empty -->
+        <div class="tracks-head">
+            <h2>Tracks</h2>
+            <span class="mono" data-count data-total="{{trackCount}}">{{trackCount}}</span>
+            <span class="spacer"></span>
+            <!-- if:hasSort --><span class="filters"><button class="filter active" type="button" data-sort="new">Newest</button><button class="filter" type="button" data-sort="likes">Most liked</button></span><!-- end:hasSort -->
+            <!-- if:hasSearch --><label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-search"/></svg><input type="search" placeholder="Search" autocomplete="off" data-search aria-label="Search tracks"></label><!-- end:hasSearch -->
+        </div>
+        <!-- if:hasTagFilter -->
+        <div class="filters tag-filter"><button class="filter active" type="button" data-tag-filter="">All</button><!-- each:filterTags --><button class="filter" type="button" data-tag-filter="{{filterTag}}">{{filterTag}}<sup>{{filterCount}}</sup></button><!-- end:filterTags --></div>
+        <!-- end:hasTagFilter -->
+        <div class="grid" data-grid>
+            <!-- each:tracks -->
+            <article class="card" data-track data-uuid="{{uuid}}" data-src="{{mixdown}}" data-peaks="{{peaks}}" data-duration="{{seconds}}"
+                     data-title="{{title}}" data-artist="{{artist}}" data-cover="{{cover}}" data-url="{{url}}" data-share-url="{{absoluteUrl}}"
+                     data-tags="{{tagList}}" data-bpm="{{bpm}}" data-created="{{created}}" data-likes="{{likes}}">
+                <a class="cover" href="{{url}}"><img src="{{cover}}" alt="Cover of {{title}}" loading="lazy" width="240" height="240"></a>
+                <button class="play" type="button" data-play aria-label="Play {{title}}"><!-- include:icons --></button>
+                <a class="title" href="{{url}}">{{title}}</a>
+                <div class="waveform" data-waveform><canvas></canvas></div>
+                <div class="row">
+                    <span class="mono"><!-- if:bpm -->{{bpm}} BPM · <!-- end:bpm --><span data-position data-total="{{duration}}">{{duration}}</span></span>
+                    <span class="spacer"></span>
+                    <!-- if:google -->
+                    <button class="count like<!-- if:liked --> active<!-- end:liked -->" type="button" data-like="{{uuid}}" data-login="{{loginUrl}}" aria-label="Like"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-heart"/></svg><span data-like-count>{{likes}}</span></button>
+                    <!-- if:commentCount --><a class="count" href="{{url}}#comments" aria-label="Comments"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-comment"/></svg>{{commentCount}}</a><!-- end:commentCount -->
+                    <!-- end:google -->
+                    <button class="count" type="button" data-share aria-label="Share {{title}}"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-share"/></svg></button>
                 </div>
-                <time class="date">{{date}}</time>
-            </div>
-            <div class="waveform" data-waveform data-unsupported-text="Your browser cannot play this track, please update it."><canvas></canvas></div>
-            <div class="meta">
-                <span class="time"><span data-position>0:00</span> / {{duration}}</span>
-                <!-- if:hasTags --><span class="tags"><!-- each:tags --><span class="tag">{{tag}}</span><!-- end:tags --></span><!-- end:hasTags -->
-                <span class="spacer"></span>
-                <!-- if:google -->
-                <button class="like<!-- if:liked --> active<!-- end:liked -->" type="button" data-like="{{uuid}}" data-login="{{loginUrl}}" aria-label="Like">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></svg>
-                    <span data-like-count>{{likes}}</span>
-                </button>
-                <a class="comment-count" href="{{url}}#comments" aria-label="Comments">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>
-                    <span>{{commentCount}}</span>
-                </a>
-                <!-- end:google -->
-            </div>
-        </li>
-        <!-- end:tracks -->
-    </ol>
+            </article>
+            <!-- end:tracks -->
+        </div>
+        <p class="empty hidden" data-no-results>Nothing found.</p>
+        <!-- end:!empty -->
+    </section>
 </main>
 <!-- include:footer -->
 </body>

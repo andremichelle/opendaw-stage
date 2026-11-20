@@ -23,7 +23,8 @@ final class Page
             'flash' => Session::flash(),
             'privacyPath' => Stage::legalPath('privacy'),
             'imprintPath' => Stage::legalPath('imprint'),
-            'year' => date('Y')
+            'year' => date('Y'),
+            'avatar' => Profile::imageUrl($config, 'avatar')
         ];
     }
 
@@ -55,7 +56,9 @@ final class Page
             'updatedDate' => date('j M Y', (int)$track['updated']),
             'wasUpdated' => $track['updated'] - $track['created'] > 60,
             'bpm' => is_null($track['bpm']) ? '' : (string)round((float)$track['bpm'], 2),
-            'tags' => array_map(fn(string $tag) => ['tag' => $tag], self::tags($track)),
+            'tags' => array_map(fn(string $tag) => ['tag' => $tag, 'tagUrl' => './?tag=' . rawurlencode($tag)], self::tags($track)),
+            'tagList' => implode("\n", self::tags($track)),
+            'created' => (string)$track['created'],
             'hasTags' => count(self::tags($track)) > 0,
             'likes' => count($likes),
             'liked' => !is_null($user) && in_array($user['id'], $likes, true),
