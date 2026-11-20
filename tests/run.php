@@ -6,7 +6,13 @@ if (PHP_SAPI !== 'cli') {exit;}
 
 $source = dirname(__DIR__);
 $site = sys_get_temp_dir() . '/opendaw-stage-test-' . bin2hex(random_bytes(4));
-$port = 18_000 + random_int(0, 999);
+$freePort = static function (): int {
+    $socket = stream_socket_server('tcp://127.0.0.1:0');
+    $port = (int)substr(strrchr((string)stream_socket_get_name($socket, false), ':'), 1);
+    fclose($socket);
+    return $port;
+};
+$port = $freePort();
 $base = "http://127.0.0.1:$port/";
 $passed = 0;
 $failed = 0;
@@ -301,7 +307,7 @@ check('short track address', request('GET', 'open-me')['status'] === 200 && str_
 check('list links the short address', str_contains($list['body'], 'href="open-me"'));
 check('unknown short address 404', request('GET', 'nope')['status'] === 404);
 check('old address still works', request('GET', 'track.php?t=open-me')['status'] === 200);
-$plainPort = $port + 1;
+$plainPort = $freePort();
 $plain = proc_open([PHP_BINARY, '-d', 'opcache.enable=0', '-S', "127.0.0.1:$plainPort", '-t', $site], [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $plainPipes);
 for ($attempt = 0; $attempt < 50 && @fsockopen('127.0.0.1', $plainPort) === false; $attempt++) {usleep(100_000);}
 $shortBase = $base;

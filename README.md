@@ -20,7 +20,7 @@ How publishing works from the studio: [openDAW manual, Stage Website](https://de
    On **nginx** the `.htaccess` files are ignored. The data folder still has a random, unguessable name and stored
    files never execute, but you should deny `/data-*`, `/lib`, `/tests` and `/tools` in your server configuration.
    The stage then links the long addresses, unless you add the rewrites yourself and set the variable
-   `STAGE_SHORT_URLS=1` for PHP.
+   `HTTP_STAGE_SHORT_URLS=1` for PHP.
 4. **mod_rewrite** for the short addresses (`example.com/music/my-track`, `/privacy`, `/imprint`). Shared hosts have it
    switched on. Without it the stage notices on its own and links the long addresses (`track.php?t=my-track`,
    `legal.php?page=privacy`) instead.
@@ -60,6 +60,10 @@ All pages are plain HTML templates in `templates/`, the design is `assets/style.
 2. Copy the files you want to change into it (`custom/style.css`, `custom/list.html`, `custom/track.html`, …).
 3. Edit them. A file in `custom/` always wins over the one in `templates/` or `assets/`, and updates of this
    repository never touch `custom/`.
+
+Never change the files in `templates/` or `assets/` directly: every update replaces them, and your changes are
+gone. Your copies in `custom/` also stay as they are when a release changes the original templates, so after an
+update compare them with the new ones in `templates/` and take over what is new.
 
 The colours are CSS variables at the top of `style.css` (`--color-accent`, `--wave`, `--wave-played`, …). Your own favicon goes to `custom/favicon.svg`.
 

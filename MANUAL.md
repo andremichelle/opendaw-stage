@@ -59,6 +59,10 @@ Everything is on `admin.php`:
    Your tracks, settings and own designs (`config.php`, the `data-…` folder, `media/` and `custom/`) stay as they
    are. If something fails on the way, the previous files are restored.
 
+An update replaces every file that comes with your stage, also `templates/` and `assets/`. Changes to your design
+belong in `custom/`, which no update touches. After an update, compare your copies in `custom/` with the new
+templates, a release may add something to them.
+
 An update also replaces the `.htaccess` files that come with your stage. If you added rules of your own there (an
 HTTPS redirect, a password, an address limit), keep them in your host's settings or in the `.htaccess` of the
 folder above your stage instead.

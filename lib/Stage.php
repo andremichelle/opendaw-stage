@@ -38,8 +38,10 @@ final class Stage
 
     public static function hasShortUrls(): bool
     {
-        return getenv('STAGE_SHORT_URLS') === '1' || ($_SERVER['STAGE_SHORT_URLS'] ?? '') === '1'
-            || ($_SERVER['REDIRECT_STAGE_SHORT_URLS'] ?? '') === '1';
+        foreach (['HTTP_STAGE_SHORT_URLS', 'REDIRECT_HTTP_STAGE_SHORT_URLS', 'STAGE_SHORT_URLS', 'REDIRECT_STAGE_SHORT_URLS'] as $name) {
+            if (($_SERVER[$name] ?? getenv($name)) === '1') {return true;}
+        }
+        return false;
     }
 
     public static function trackPath(string $slug): string
