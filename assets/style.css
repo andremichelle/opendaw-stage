@@ -157,6 +157,13 @@ svg {
     color: var(--color-shadow);
 }
 
+.site-footer .github {
+    width: 14px;
+    height: 14px;
+    margin-left: 6px;
+    vertical-align: -2px;
+}
+
 .flash {
     max-width: 960px;
     margin: 16px auto 0;
