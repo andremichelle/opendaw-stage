@@ -348,6 +348,7 @@ input:focus, textarea:focus {
     width: 44px;
     height: 44px;
     margin-right: 6px;
+    margin-left: -4px;
 }
 
 .play .icon-pause, .playing .play .icon-play {
@@ -629,16 +630,51 @@ input:focus, textarea:focus {
     min-width: 0;
 }
 
+.card .cover {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
 .card .play {
     position: absolute;
     top: 10px;
     left: 10px;
+    width: 44px;
+    height: 44px;
     opacity: 0;
     transition: opacity 0.15s, background-color 0.15s;
 }
 
-.card:hover .play, .card.playing .play, .card .play:focus-visible {
+.card:hover .play, .card.playing .play, .card .cover:focus-visible .play {
     opacity: 1;
+}
+
+.card .play {
+    background-color: var(--paper);
+    color: var(--ink);
+}
+
+.play.large {
+    background-color: var(--ink-6);
+    color: var(--ink);
+}
+
+.play.large:hover {
+    background-color: var(--ink-12);
+}
+
+.card .play svg, .play.large svg {
+    width: 20px;
+    height: 20px;
+}
+
+.card.playing .play, .playing .play.large {
+    background-color: var(--accent);
+    color: var(--paper);
 }
 
 .card .title {
@@ -1310,8 +1346,8 @@ input:focus, textarea:focus {
     }
 
     .card .play {
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         opacity: 1;
     }
 

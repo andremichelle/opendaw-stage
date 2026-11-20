@@ -40,6 +40,9 @@ $followers = count($storage->followers());
 $data['followerCount'] = $followers;
 $data['hasFollowers'] = $data['google'] && $followers > 0;
 $data['cover'] = Profile::imageUrl($config, 'cover');
+$siteImage = $data['cover'] !== '' ? $data['cover'] : $data['avatar'];
+$data['siteImage'] = $siteImage === '' ? '' : Stage::baseUrl() . $siteImage;
+$data['siteImageLarge'] = $data['cover'] !== '';
 $data['bio'] = (string)($config['bio'] ?? '');
 $data['links'] = array_map(fn(array $link) => ['linkLabel' => $link['label'], 'linkUrl' => $link['url'],
     'linkIcon' => Profile::icon($link['url'])], Profile::links($config));

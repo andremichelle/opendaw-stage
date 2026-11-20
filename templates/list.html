@@ -7,6 +7,9 @@
     <meta property="og:title" content="{{siteTitle}}">
     <meta property="og:url" content="{{baseUrl}}">
     <meta property="og:site_name" content="{{siteTitle}}">
+    <!-- if:bio --><meta name="description" content="{{bio}}"><meta property="og:description" content="{{bio}}"><!-- end:bio -->
+    <!-- if:siteImage --><meta property="og:image" content="{{siteImage}}"><!-- end:siteImage -->
+    <!-- if:siteImageLarge --><meta name="twitter:card" content="summary_large_image"><!-- end:siteImageLarge -->
 </head>
 <body class="page-list">
 <!-- include:header -->
@@ -63,8 +66,7 @@
             <article class="card" data-track data-uuid="{{uuid}}" data-src="{{mixdown}}" data-peaks="{{peaks}}" data-duration="{{seconds}}"
                      data-title="{{title}}" data-artist="{{artist}}" data-cover="{{cover}}" data-url="{{url}}" data-share-url="{{absoluteUrl}}"
                      data-tags="{{tagList}}" data-bpm="{{bpm}}" data-created="{{created}}" data-likes="{{likes}}">
-                <a class="cover" href="{{url}}"><img src="{{cover}}" alt="Cover of {{title}}" loading="lazy" width="240" height="240"></a>
-                <button class="play" type="button" data-play aria-label="Play {{title}}"><!-- include:icons --></button>
+                <button class="cover" type="button" data-play aria-label="Play or pause {{title}}"><img src="{{cover}}" alt="" loading="lazy" width="240" height="240"><span class="play"><!-- include:icons --></span></button>
                 <a class="title" href="{{url}}">{{title}}</a>
                 <div class="waveform" data-waveform><canvas></canvas></div>
                 <div class="row">

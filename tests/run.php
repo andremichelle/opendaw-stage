@@ -496,10 +496,13 @@ $imagePost = static function (string $kind, string $bytes, string $do = 'image')
 };
 $imagePost('avatar', $png(400, 400));
 $listBody = request('GET', '')['body'];
+check('profile picture is the link preview image without a cover', str_contains(request('GET', '')['body'], 'property="og:image" content="' . $base . 'media/_stage/avatar.png?v='));
 check('uploaded profile picture shows', is_file("$site/media/_stage/avatar.png") && preg_match('#class="profile-image" src="media/_stage/avatar\.png\?v=\d+"#', $listBody) === 1);
 check('profile picture shows on the track page', str_contains(request('GET', 'open-me')['body'], 'src="media/_stage/avatar.png?v='));
 $imagePost('cover', $png(2400, 600));
 check('uploaded cover shows', is_file("$site/media/_stage/cover.png") && str_contains(request('GET', '')['body'], 'class="hero-cover"><img src="media/_stage/cover.png?v='));
+check('cover is the link preview image', str_contains(request('GET', '')['body'], 'property="og:image" content="' . $base . 'media/_stage/cover.png?v=')
+    && str_contains(request('GET', '')['body'], 'summary_large_image'));
 $imagePost('cover', $png(20000, 600));
 check('oversized cover refused', str_contains(request('GET', 'admin.php', [], '', $admin)['body'], 'The image is too large'));
 $imagePost('avatar', '<?php echo 1;');
