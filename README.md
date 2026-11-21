@@ -4,7 +4,8 @@ Your own music website for tracks made in [openDAW](https://opendaw.studio). You
 publish tracks straight from the studio, and visitors listen, like, comment and follow. You moderate everything on
 a private admin page.
 
-Example: [andremichelle.io/openDAW/music](https://www.andremichelle.io/openDAW/music/)
+<a href="https://www.andremichelle.io/openDAW/music/"><img src="docs/preview.webp" alt="openDAW Stage example page"></a>
+<br><sub>An example stage: <a href="https://www.andremichelle.io/openDAW/music/">andremichelle.io/openDAW/music</a></sub>
 
 No database server, no build step, no Composer, no npm. Plain PHP, HTML, CSS and JavaScript.
 
